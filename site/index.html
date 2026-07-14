@@ -254,6 +254,42 @@
       gap: 10px;
     }
 
+    .chart-section {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+
+    .chart-section > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .chart-first {
+      background:
+        linear-gradient(135deg, rgba(56, 117, 255, 0.16), transparent 42%),
+        linear-gradient(180deg, rgba(13, 25, 40, 0.94), rgba(9, 14, 21, 0.92));
+    }
+
+    .chart-second {
+      background:
+        linear-gradient(135deg, rgba(49, 211, 152, 0.13), transparent 44%),
+        linear-gradient(180deg, rgba(13, 29, 26, 0.92), rgba(10, 14, 18, 0.94));
+    }
+
+    .chart-third {
+      background:
+        linear-gradient(135deg, rgba(157, 124, 255, 0.14), transparent 42%),
+        linear-gradient(180deg, rgba(27, 18, 39, 0.91), rgba(10, 13, 19, 0.95));
+    }
+
     .chart-head {
       display: flex;
       justify-content: space-between;
@@ -309,6 +345,19 @@
       text-align: center;
     }
 
+    .icon.live-on {
+      border-color: rgba(49, 211, 152, 0.78);
+      background: rgba(49, 211, 152, 0.18);
+      color: #c9ffe9;
+      box-shadow: 0 0 22px rgba(49, 211, 152, 0.18);
+    }
+
+    .icon.live-off {
+      border-color: rgba(255, 95, 122, 0.68);
+      background: rgba(255, 95, 122, 0.14);
+      color: #ffd2da;
+    }
+
     canvas {
       display: block;
       width: 100%;
@@ -320,19 +369,138 @@
       touch-action: none;
     }
 
+    .chart-first canvas,
+    canvas.chart-canvas-first {
+      background:
+        radial-gradient(circle at 20% 0%, rgba(83, 167, 255, 0.16), transparent 32%),
+        linear-gradient(180deg, #091522 0%, #070d15 100%);
+    }
+
+    .chart-second canvas,
+    canvas.chart-canvas-second {
+      background:
+        radial-gradient(circle at 84% 0%, rgba(242, 184, 75, 0.13), transparent 34%),
+        linear-gradient(180deg, #071914 0%, #071016 100%);
+    }
+
+    .chart-third canvas,
+    canvas.chart-canvas-third {
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 95, 122, 0.13), transparent 34%),
+        linear-gradient(180deg, #171124 0%, #090d14 100%);
+    }
+
     .pan-row {
       display: grid;
-      grid-template-columns: auto minmax(180px, 1fr) auto auto minmax(190px, auto);
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 7px;
       align-items: center;
       color: var(--muted);
       font-size: 12px;
       min-width: 0;
+      margin-top: -2px;
     }
 
-    .pan-row input[type="range"] {
+    .scrub-shell {
+      display: grid;
+      grid-template-columns: 24px minmax(180px, 1fr) 24px;
+      gap: 7px;
+      align-items: center;
+      min-width: 0;
+      padding: 5px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 7px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+        rgba(5, 8, 12, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .scrub-arrow.icon {
+      min-width: 20px;
+      width: 20px;
+      min-height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #8f9aa2;
+      font-size: 20px;
+      line-height: 1;
+      box-shadow: none;
+    }
+
+    .scrub-arrow.icon:hover {
+      background: rgba(83, 167, 255, 0.11);
+      color: #cde9ff;
+    }
+
+    .pan-row input[type="range"],
+    .scrub-range {
       width: 100%;
+      height: 18px;
+      margin: 0;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
       accent-color: var(--blue);
+    }
+
+    .pan-row input[type="range"]::-webkit-slider-runnable-track,
+    .scrub-range::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(90deg, rgba(130, 143, 153, 0.95), rgba(93, 104, 113, 0.95)),
+        #68747d;
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.17),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.36);
+    }
+
+    .pan-row input[type="range"]::-webkit-slider-thumb,
+    .scrub-range::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 19px;
+      height: 19px;
+      margin-top: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(234, 248, 255, 0.94);
+      background:
+        radial-gradient(circle at 35% 30%, #ffffff, #8fd0ff 34%, #318fe6 72%);
+      box-shadow:
+        0 0 0 4px rgba(83, 167, 255, 0.14),
+        0 3px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .pan-row input[type="range"]::-moz-range-track,
+    .scrub-range::-moz-range-track {
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #68747d;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.17);
+    }
+
+    .pan-row input[type="range"]::-moz-range-thumb,
+    .scrub-range::-moz-range-thumb {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 2px solid rgba(234, 248, 255, 0.94);
+      background: #53a7ff;
+      box-shadow: 0 0 0 4px rgba(83, 167, 255, 0.14);
+    }
+
+    .stream-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
     }
 
     .window-note {
@@ -414,9 +582,9 @@
       .api-control { width: 100%; }
       .api-control { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: 1fr; }
-      .pan-row { grid-template-columns: auto 1fr auto auto; }
+      .scrub-shell { grid-template-columns: 20px minmax(120px, 1fr) 20px; }
+      .stream-row { grid-template-columns: 1fr; }
       .window-note {
-        grid-column: 1 / -1;
         text-align: left;
         white-space: normal;
       }
@@ -484,11 +652,15 @@
       </div>
       <canvas id="modal-canvas"></canvas>
       <div class="pan-row" data-chart="modal">
-        <button class="icon" data-pan="older">&lt;</button>
-        <input id="modal-pan" type="range" min="0" max="10000" value="10000">
-        <button class="icon" data-pan="newer">&gt;</button>
-        <button class="icon" data-pan="live">Live</button>
-        <span class="window-note" id="modal-note">Live</span>
+        <div class="scrub-shell">
+          <button class="icon scrub-arrow" data-pan="older">&lt;</button>
+          <input id="modal-pan" class="scrub-range" type="range" min="0" max="10000" value="10000">
+          <button class="icon scrub-arrow" data-pan="newer">&gt;</button>
+        </div>
+        <div class="stream-row">
+          <button class="icon" data-pan="live">Live</button>
+          <span class="window-note" id="modal-note">Live</span>
+        </div>
       </div>
       <div class="legend" id="modal-legend"></div>
     </div>
@@ -501,12 +673,12 @@
     const WINDOWS = [
       ["5s", 5], ["10s", 10], ["15s", 15], ["30s", 30],
       ["1m", 60], ["3m", 180], ["5m", 300], ["15m", 900],
-      ["1h", 3600], ["1w", 604800], ["1mo", 2592000], ["1y", 31536000]
+      ["1h", 3600], ["1d", 86400]
     ];
     const METRICS = {
-      first: { title: "1st Order Greeks", metrics: ["delta", "theta", "vega", "rho"], colors: ["#53a7ff", "#f2b84b", "#31d398", "#9d7cff"] },
-      second: { title: "2nd Order Greeks", metrics: ["gamma", "vanna", "charm", "vomma"], colors: ["#53a7ff", "#31d398", "#f2b84b", "#9d7cff"] },
-      third: { title: "3rd Order Greeks", metrics: ["speed", "zomma", "color", "ultima"], colors: ["#53a7ff", "#31d398", "#f2b84b", "#9d7cff"] }
+      first: { title: "1st Order Greeks", metrics: ["delta", "theta", "vega", "rho"], colors: ["#55b6ff", "#ffd166", "#2ee6a6", "#d58cff"] },
+      second: { title: "2nd Order Greeks", metrics: ["gamma", "vanna", "charm", "vomma"], colors: ["#6aa8ff", "#35e0a2", "#f8bd4e", "#a78bff"] },
+      third: { title: "3rd Order Greeks", metrics: ["speed", "zomma", "color", "ultima"], colors: ["#ff6f91", "#56dff2", "#f7d154", "#c084fc"] }
     };
     const state = {};
     const history = [];
@@ -516,6 +688,7 @@
     let floorMs = latestMs;
     let expanded = null;
     let sse = null;
+    let streamActive = false;
     let raf = 0;
 
     Object.keys(METRICS).forEach((key) => {
@@ -529,7 +702,7 @@
 
     function buildCharts() {
       $("charts").innerHTML = Object.entries(METRICS).map(([key, cfg]) => `
-        <section id="${key}">
+        <section id="${key}" class="chart-section chart-${key}">
           <div class="chart-head">
             <h3>${cfg.title}</h3>
             <div class="actions">
@@ -542,15 +715,18 @@
               <button class="icon" data-expand="${key}">[]</button>
             </div>
           </div>
-          <canvas id="${key}-canvas" data-chart="${key}"></canvas>
+          <canvas id="${key}-canvas" class="chart-canvas-${key}" data-chart="${key}"></canvas>
           <div class="pan-row" data-chart="${key}">
-            <button class="icon" data-pan="older">&lt;</button>
-            <input id="${key}-pan" type="range" min="0" max="10000" value="10000">
-            <button class="icon" data-pan="newer">&gt;</button>
-            <button class="icon" data-pan="live">Live</button>
-            <span class="window-note" id="${key}-note">Live</span>
+            <div class="scrub-shell">
+              <button class="icon scrub-arrow" data-pan="older">&lt;</button>
+              <input id="${key}-pan" class="scrub-range" type="range" min="0" max="10000" value="10000">
+              <button class="icon scrub-arrow" data-pan="newer">&gt;</button>
+            </div>
+            <div class="stream-row">
+              <button class="icon" data-pan="live">Live</button>
+              <span class="window-note" id="${key}-note">Live</span>
+            </div>
           </div>
-          <div class="legend" id="${key}-legend">${legend(key)}</div>
         </section>
       `).join("");
     }
@@ -641,6 +817,8 @@
         sse.onerror = () => {
           $("status").textContent = "SSE fallback polling";
           $("dot").classList.remove("ok");
+          streamActive = false;
+          drawSoon();
         };
         setInterval(async () => {
           if (!sse || sse.readyState === EventSource.CLOSED) update(await fetchJson("/api/latest"));
@@ -648,6 +826,8 @@
       } catch (error) {
         showError(`Cloud API connection failed: ${error.message}`);
         $("status").textContent = "API missing";
+        streamActive = false;
+        drawSoon();
       }
     }
 
@@ -656,6 +836,10 @@
       const s = state[chart];
       const end = viewEnd(s);
       const start = Math.max(floorMs, end - s.spanMs);
+      if (end - start < 1000) {
+        drawSoon();
+        return;
+      }
       try {
         const payload = await fetchJson(`/api/history?symbol=${encodeURIComponent(symbol)}&start_ms=${Math.round(start)}&end_ms=${Math.round(end)}&limit=12000`);
         applyCoverage(payload.coverage);
@@ -701,6 +885,7 @@
       if (point?.timestamp) insertPoint(point);
       $("status").textContent = "Streaming";
       $("dot").classList.add("ok");
+      streamActive = true;
       $("last-update").textContent = point?.timestamp ? new Date(point.timestamp).toLocaleString() : new Date().toLocaleString();
       drawSoon();
     }
@@ -794,6 +979,7 @@
       expanded = chart;
       $("modal-title").textContent = `${METRICS[chart].title} Expanded`;
       $("modal-legend").innerHTML = legend(chart);
+      $("modal-canvas").className = `chart-canvas-${chart}`;
       $("modal").classList.add("open");
       drawSoon();
     }
@@ -809,8 +995,6 @@
         raf = 0;
         Object.keys(state).forEach((chart) => drawChart($(chart + "-canvas"), chart));
         if (expanded) {
-          $("modal-pan").value = endToSlider(state[expanded]);
-          $("modal-note").textContent = note(expanded);
           drawChart($("modal-canvas"), expanded);
         }
       });
@@ -821,7 +1005,7 @@
       resize(canvas);
       const ctx = canvas.getContext("2d");
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      const pad = { left: 76, right: 52, top: 50, bottom: 58 };
+      const pad = { left: 76, right: 52, top: w < 620 ? 84 : 58, bottom: 58 };
       ctx.clearRect(0, 0, w, h);
       const end = viewEnd(s), start = end - s.spanMs;
       const values = points.flatMap((p) => cfg.metrics.map((m) => Number(p.totals[m] || 0)));
@@ -839,8 +1023,7 @@
         cfg.metrics.forEach((m, i) => series(ctx, points, m, cfg.colors[i], xAt, yAt, w, pad));
       }
       if (s.hover && points.length) hover(ctx, w, h, pad, s, cfg, points, start, end, xAt, yAt);
-      $(chart + "-pan").value = endToSlider(s);
-      $(chart + "-note").textContent = note(chart);
+      syncPanControls(chart);
     }
 
     function axes(ctx, w, h, pad, minY, maxY, start, end, xAt, yAt, chart) {
@@ -857,8 +1040,39 @@
       }
       const zeroY = yAt(0); ctx.save(); ctx.strokeStyle = "rgba(143,162,173,.65)"; ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke(); ctx.restore();
-      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.font = "700 15px Inter, sans-serif"; ctx.fillStyle = "#eef5f4";
-      ctx.fillText(`${METRICS[chart].title} | ${win(state[chart].selectedSeconds)} selected | ${win(Math.ceil(state[chart].spanMs / 1000))} visible`, pad.left, 24);
+      drawMetricKey(ctx, pad.left, 24, w - pad.right, METRICS[chart]);
+    }
+
+    function drawMetricKey(ctx, x, y, maxX, cfg) {
+      ctx.save();
+      ctx.font = "800 12px Inter, sans-serif";
+      ctx.textBaseline = "middle";
+      let cx = x, row = 0;
+      cfg.metrics.forEach((metric, index) => {
+        const label = metric.toUpperCase();
+        const width = Math.ceil(ctx.measureText(label).width) + 34;
+        if (cx + width > maxX && cx > x) {
+          cx = x;
+          row += 1;
+        }
+        const cy = y + row * 27;
+        ctx.fillStyle = "rgba(5, 9, 14, 0.62)";
+        ctx.strokeStyle = cfg.colors[index];
+        ctx.globalAlpha = 0.92;
+        ctx.beginPath();
+        ctx.roundRect(cx, cy - 12, width, 24, 7);
+        ctx.fill();
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = cfg.colors[index];
+        ctx.beginPath();
+        ctx.roundRect(cx + 8, cy - 2, 16, 4, 2);
+        ctx.fill();
+        ctx.fillStyle = "#dce8ee";
+        ctx.fillText(label, cx + 30, cy);
+        cx += width + 8;
+      });
+      ctx.restore();
     }
 
     function series(ctx, points, metric, color, xAt, yAt, w, pad) {
@@ -908,12 +1122,34 @@
       canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    function syncPanControls(chart) {
+      const s = state[chart];
+      const live = s.viewEndMs === null && streamActive;
+      const row = document.querySelector(`.pan-row[data-chart="${chart}"]`);
+      if (row) {
+        row.querySelector("input").value = endToSlider(s);
+        row.querySelector(".window-note").textContent = note(chart);
+        setLiveButton(row.querySelector('[data-pan="live"]'), live);
+      }
+      if (expanded === chart) {
+        $("modal-pan").value = endToSlider(s);
+        $("modal-note").textContent = note(chart);
+        setLiveButton(document.querySelector('.pan-row[data-chart="modal"] [data-pan="live"]'), live);
+      }
+    }
+
+    function setLiveButton(button, live) {
+      if (!button) return;
+      button.classList.toggle("live-on", live);
+      button.classList.toggle("live-off", !live);
+    }
+
     function legend(chart) { return METRICS[chart].metrics.map((m, i) => `<span><i class="swatch" style="background:${METRICS[chart].colors[i]}"></i>${m}</span>`).join(""); }
     function note(chart) { const s = state[chart], pts = visiblePoints(s), mode = s.viewEndMs === null ? "Live tail" : `${duration((latestMs - viewEnd(s)) / 1000)} behind`; return pts.length ? `${mode}: ${dateShort(pts[0].timestampMs)} to ${dateShort(pts[pts.length - 1].timestampMs)} | ${pts.length} pts` : `${mode}: no stored live data in this window yet`; }
     function cls(v) { return Number(v || 0) >= 0 ? "green" : "red"; }
     function fmt(v, d = 4) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }); }
     function axisNum(v) { const a = Math.abs(v); if (a >= 1e6) return (v / 1e6).toFixed(1) + "M"; if (a >= 1e3) return (v / 1e3).toFixed(1) + "K"; if (a >= 1) return v.toFixed(2); return v.toFixed(5); }
-    function tick(ms, span) { const d = new Date(ms); if (span >= 31536000e3) return d.toLocaleDateString([], { month: "short", year: "2-digit" }); if (span >= 604800e3) return d.toLocaleDateString([], { month: "short", day: "numeric" }); return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+    function tick(ms, span) { const d = new Date(ms); if (span >= 86400e3) return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
     function precise(ms) { const d = new Date(ms); return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}.${String(d.getMilliseconds()).padStart(3, "0")}`; }
     function dateShort(ms) { return new Date(ms).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
     function duration(s) { if (s >= 31536000) return Math.round(s / 31536000) + "y"; if (s >= 2592000) return Math.round(s / 2592000) + "mo"; if (s >= 604800) return Math.round(s / 604800) + "w"; if (s >= 86400) return Math.round(s / 86400) + "d"; if (s >= 3600) return Math.round(s / 3600) + "h"; if (s >= 60) return Math.round(s / 60) + "m"; return Math.round(s) + "s"; }
