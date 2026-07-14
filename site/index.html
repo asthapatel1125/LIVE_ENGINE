@@ -259,6 +259,7 @@
 
     .chart-section::before {
       content: "";
+      display: none;
       position: absolute;
       inset: 0;
       pointer-events: none;
@@ -271,15 +272,18 @@
     }
 
     .chart-first {
-      background: #0b1420;
+      background-color: #0b1420;
+      background-image: none;
     }
 
     .chart-second {
-      background: #0b1715;
+      background-color: #0b1715;
+      background-image: none;
     }
 
     .chart-third {
-      background: #14101d;
+      background-color: #14101d;
+      background-image: none;
     }
 
     .chart-head {
@@ -406,17 +410,20 @@
 
     .chart-first canvas,
     canvas.chart-canvas-first {
-      background: #08111c;
+      background-color: #08111c;
+      background-image: none;
     }
 
     .chart-second canvas,
     canvas.chart-canvas-second {
-      background: #071310;
+      background-color: #071310;
+      background-image: none;
     }
 
     .chart-third canvas,
     canvas.chart-canvas-third {
-      background: #100d18;
+      background-color: #100d18;
+      background-image: none;
     }
 
     .pan-row {
@@ -1073,6 +1080,7 @@
     function drawMetricKey(ctx, x, y, maxX, cfg) {
       ctx.save();
       ctx.font = "800 12px Inter, sans-serif";
+      ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       let cx = x, row = 0;
       cfg.metrics.forEach((metric, index) => {
