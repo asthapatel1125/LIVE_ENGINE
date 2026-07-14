@@ -272,18 +272,21 @@
     }
 
     .chart-first {
-      background-color: #0b1420;
+      background-color: #0a1728;
       background-image: none;
+      border-color: rgba(83, 167, 255, 0.26);
     }
 
     .chart-second {
-      background-color: #0b1715;
+      background-color: #082015;
       background-image: none;
+      border-color: rgba(49, 211, 152, 0.24);
     }
 
     .chart-third {
-      background-color: #14101d;
+      background-color: #1a1024;
       background-image: none;
+      border-color: rgba(192, 132, 252, 0.25);
     }
 
     .chart-head {
@@ -401,7 +404,7 @@
       display: block;
       width: 100%;
       height: 366px;
-      border: 1px solid rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 7px;
       background: #080e15;
       cursor: crosshair;
@@ -410,19 +413,19 @@
 
     .chart-first canvas,
     canvas.chart-canvas-first {
-      background-color: #08111c;
+      background-color: #07111f;
       background-image: none;
     }
 
     .chart-second canvas,
     canvas.chart-canvas-second {
-      background-color: #071310;
+      background-color: #06170f;
       background-image: none;
     }
 
     .chart-third canvas,
     canvas.chart-canvas-third {
-      background-color: #100d18;
+      background-color: #120a1b;
       background-image: none;
     }
 
@@ -1061,18 +1064,18 @@
     }
 
     function axes(ctx, w, h, pad, minY, maxY, start, end, xAt, yAt, chart) {
-      ctx.strokeStyle = "#22303d"; ctx.lineWidth = 1;
+      ctx.strokeStyle = "#2d3c4a"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, h - pad.bottom); ctx.lineTo(w - pad.right, h - pad.bottom); ctx.stroke();
-      ctx.font = "12px Inter, sans-serif"; ctx.fillStyle = "#8fa2ad";
+      ctx.font = "12px Inter, sans-serif"; ctx.fillStyle = "#a5b5c0";
       for (let i = 0; i <= 5; i++) {
         const yVal = minY + ((maxY - minY) * i) / 5, y = yAt(yVal);
-        ctx.strokeStyle = "rgba(255,255,255,.055)"; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+        ctx.strokeStyle = "rgba(220,235,245,.075)"; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
         ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(axisNum(yVal), pad.left - 8, y);
         const ms = start + ((end - start) * i) / 5, x = xAt(ms);
-        ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
+        ctx.strokeStyle = "rgba(220,235,245,.06)"; ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
         ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(tick(ms, state[chart].spanMs), x, h - pad.bottom + 10);
       }
-      const zeroY = yAt(0); ctx.save(); ctx.strokeStyle = "rgba(143,162,173,.65)"; ctx.setLineDash([5, 5]);
+      const zeroY = yAt(0); ctx.save(); ctx.strokeStyle = "rgba(165,181,192,.72)"; ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke(); ctx.restore();
       drawMetricKey(ctx, pad.left, 24, w - pad.right, METRICS[chart]);
     }
