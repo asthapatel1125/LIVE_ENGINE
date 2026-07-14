@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Options Greeks Cloud Cockpit</title>
+  <style>
+    :root {
+      --bg: #080b10;
+      --panel: #0f151d;
+      --panel-2: #121b25;
+      --ink: #eef5f4;
+      --muted: #8fa2ad;
+      --line: #22303d;
+      --blue: #53a7ff;
+      --green: #31d398;
+      --red: #ff5f7a;
+      --gold: #f2b84b;
+      --purple: #9d7cff;
+      --cyan: #40d9e6;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(83, 167, 255, 0.14), transparent 34%),
+        radial-gradient(circle at 96% 8%, rgba(49, 211, 152, 0.11), transparent 34%),
+        linear-gradient(180deg, #0b1017 0%, #07090d 100%);
+      color: var(--ink);
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 18px;
+      background: rgba(9, 13, 19, 0.92);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-y: auto;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 7px 0 18px;
+      color: var(--muted);
+      font-weight: 760;
+      font-size: 12px;
+    }
+
+    nav {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    nav button,
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 7px;
+      min-height: 32px;
+      padding: 7px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #c7d4da;
+      font-weight: 850;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    nav button.active,
+    nav button:hover,
+    .btn:hover {
+      border-color: rgba(83, 167, 255, 0.38);
+      background: rgba(83, 167, 255, 0.13);
+      color: #fff;
+    }
+
+    .status {
+      display: grid;
+      gap: 9px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+    }
+
+    .status div {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: #fff;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 18px rgba(255, 95, 122, 0.5);
+      align-self: center;
+    }
+
+    .dot.ok {
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(49, 211, 152, 0.55);
+    }
+
+    main {
+      min-width: 0;
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .topbar,
+    .card,
+    section {
+      min-width: 0;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(15, 21, 29, 0.86);
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .api-control {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      width: min(620px, 100%);
+    }
+
+    .api-control input {
+      min-width: 0;
+      min-height: 34px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: #0a1018;
+      color: var(--ink);
+      padding: 7px 10px;
+      font-weight: 700;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: rgba(83, 167, 255, 0.14);
+      color: #bfe0ff;
+      white-space: nowrap;
+    }
+
+    .error {
+      display: none;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 95, 122, 0.46);
+      border-radius: 8px;
+      background: rgba(255, 95, 122, 0.11);
+      color: #ffc2cb;
+      font-weight: 850;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 13px;
+    }
+
+    .card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .card strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 23px;
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+    }
+
+    .card small {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      line-height: 1.35;
+      font-weight: 730;
+    }
+
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+
+    section {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .chart-head h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .timeframes {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .timeframes button,
+    .icon {
+      min-height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #0b1119;
+      color: var(--ink);
+      padding: 5px 8px;
+      font-weight: 880;
+      cursor: pointer;
+    }
+
+    .timeframes button.active,
+    .icon:hover {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #03101d;
+    }
+
+    .icon {
+      min-width: 34px;
+      text-align: center;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 366px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 7px;
+      background: linear-gradient(180deg, #0b1119, #090d13);
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .pan-row {
+      display: grid;
+      grid-template-columns: auto minmax(180px, 1fr) auto auto minmax(190px, auto);
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 0;
+    }
+
+    .pan-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .window-note {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+      font-weight: 780;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-panel {
+      width: min(1400px, 96vw);
+      max-height: 92vh;
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #0c1118;
+      box-shadow: 0 26px 90px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal canvas {
+      height: min(660px, 68vh);
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; }
+      nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      main { padding: 10px; }
+      .topbar,
+      .chart-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .toolbar,
+      .api-control { width: 100%; }
+      .api-control { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .pan-row { grid-template-columns: auto 1fr auto auto; }
+      .window-note {
+        grid-column: 1 / -1;
+        text-align: left;
+        white-space: normal;
+      }
+      canvas { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <h1>Options Greeks Cloud</h1>
+        <p>Live dealer pressure cockpit</p>
+      </div>
+      <nav>
+        <button class="active" data-target="overview">Overview</button>
+        <button data-target="first">1st Order</button>
+        <button data-target="second">2nd Order</button>
+        <button data-target="third">3rd Order</button>
+      </nav>
+      <div class="status">
+        <div><span>Status</span><strong id="status">Connecting</strong></div>
+        <div><span>Stream</span><strong><i class="dot" id="dot"></i></strong></div>
+        <div><span>Symbol</span><strong id="symbol">--</strong></div>
+        <div><span>Rows</span><strong id="rows">--</strong></div>
+        <div><span>History</span><strong id="history-range">Cloud DB</strong></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h2>Trading Dashboard</h2>
+          <div class="toolbar"><span id="last-update">Waiting for data</span><span class="tag" id="config-tag">Cloud API</span></div>
+        </div>
+        <div class="api-control">
+          <input id="api-base" placeholder="https://your-backend.example.com">
+          <button class="btn" id="save-api">Use API</button>
+        </div>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="summary-grid" id="overview">
+        <div class="card"><span>Underlying</span><strong id="underlying">--</strong><small>Near-ATM reference</small></div>
+        <div class="card"><span>Gamma</span><strong id="gamma" class="green">--</strong><small id="gamma-mode">--</small></div>
+        <div class="card"><span>Charm</span><strong id="charm" class="green">--</strong><small id="charm-mode">--</small></div>
+        <div class="card"><span>Vanna</span><strong id="vanna" class="green">--</strong><small id="vanna-mode">--</small></div>
+      </div>
+
+      <div id="charts"></div>
+    </main>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-panel">
+      <div class="chart-head">
+        <h3 id="modal-title">Expanded Chart</h3>
+        <div class="actions">
+          <button class="icon" data-modal-zoom="in">+</button>
+          <button class="icon" data-modal-zoom="out">-</button>
+          <button class="icon" data-modal-zoom="reset">1x</button>
+          <button class="icon" id="close">x</button>
+        </div>
+      </div>
+      <canvas id="modal-canvas"></canvas>
+      <div class="pan-row" data-chart="modal">
+        <button class="icon" data-pan="older">&lt;</button>
+        <input id="modal-pan" type="range" min="0" max="10000" value="10000">
+        <button class="icon" data-pan="newer">&gt;</button>
+        <button class="icon" data-pan="live">Live</button>
+        <span class="window-note" id="modal-note">Live</span>
+      </div>
+      <div class="legend" id="modal-legend"></div>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const DAY_MS = 86400000;
+    const WINDOWS = [
+      ["5s", 5], ["10s", 10], ["15s", 15], ["30s", 30],
+      ["1m", 60], ["3m", 180], ["5m", 300], ["15m", 900],
+      ["1h", 3600], ["1w", 604800], ["1mo", 2592000], ["1y", 31536000]
+    ];
+    const METRICS = {
+      first: { title: "1st Order Greeks", metrics: ["delta", "theta", "vega", "rho"], colors: ["#53a7ff", "#f2b84b", "#31d398", "#9d7cff"] },
+      second: { title: "2nd Order Greeks", metrics: ["gamma", "vanna", "charm", "vomma"], colors: ["#53a7ff", "#31d398", "#f2b84b", "#9d7cff"] },
+      third: { title: "3rd Order Greeks", metrics: ["speed", "zomma", "color", "ultima"], colors: ["#53a7ff", "#31d398", "#f2b84b", "#9d7cff"] }
+    };
+    const state = {};
+    const history = [];
+    let apiBase = window.TRADING_API_BASE || localStorage.getItem("TRADING_API_BASE") || "";
+    let symbol = "QQQ";
+    let latestMs = Date.now();
+    let floorMs = latestMs;
+    let expanded = null;
+    let sse = null;
+    let raf = 0;
+
+    Object.keys(METRICS).forEach((key) => {
+      state[key] = { key, selectedSeconds: 60, spanMs: 60000, viewEndMs: null, hover: null, lastHoverMs: null };
+    });
+
+    $("api-base").value = apiBase;
+    buildCharts();
+    bind();
+    connect();
+
+    function buildCharts() {
+      $("charts").innerHTML = Object.entries(METRICS).map(([key, cfg]) => `
+        <section id="${key}">
+          <div class="chart-head">
+            <h3>${cfg.title}</h3>
+            <div class="actions">
+              <div class="timeframes" data-chart="${key}">
+                ${WINDOWS.map(([label, seconds]) => `<button class="${seconds === 60 ? "active" : ""}" data-window="${seconds}">${label}</button>`).join("")}
+              </div>
+              <button class="icon" data-zoom="in" data-chart="${key}">+</button>
+              <button class="icon" data-zoom="out" data-chart="${key}">-</button>
+              <button class="icon" data-zoom="reset" data-chart="${key}">1x</button>
+              <button class="icon" data-expand="${key}">[]</button>
+            </div>
+          </div>
+          <canvas id="${key}-canvas" data-chart="${key}"></canvas>
+          <div class="pan-row" data-chart="${key}">
+            <button class="icon" data-pan="older">&lt;</button>
+            <input id="${key}-pan" type="range" min="0" max="10000" value="10000">
+            <button class="icon" data-pan="newer">&gt;</button>
+            <button class="icon" data-pan="live">Live</button>
+            <span class="window-note" id="${key}-note">Live</span>
+          </div>
+          <div class="legend" id="${key}-legend">${legend(key)}</div>
+        </section>
+      `).join("");
+    }
+
+    function bind() {
+      $("save-api").addEventListener("click", () => {
+        apiBase = $("api-base").value.trim().replace(/\/$/, "");
+        localStorage.setItem("TRADING_API_BASE", apiBase);
+        connect();
+      });
+      document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => {
+        document.querySelectorAll("nav button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        $(button.dataset.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }));
+      document.querySelectorAll(".timeframes button").forEach((button) => button.addEventListener("click", () => {
+        const chart = button.closest(".timeframes").dataset.chart;
+        state[chart].selectedSeconds = Number(button.dataset.window);
+        state[chart].spanMs = state[chart].selectedSeconds * 1000;
+        state[chart].viewEndMs = null;
+        button.closest(".timeframes").querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        loadHistory(chart);
+        drawSoon();
+      }));
+      document.querySelectorAll("[data-zoom]").forEach((button) => button.addEventListener("click", () => zoom(button.dataset.chart, button.dataset.zoom)));
+      document.querySelectorAll("[data-expand]").forEach((button) => button.addEventListener("click", () => openModal(button.dataset.expand)));
+      document.querySelectorAll("canvas[data-chart]").forEach((canvas) => wireCanvas(canvas, () => canvas.dataset.chart));
+      wireCanvas($("modal-canvas"), () => expanded);
+      document.querySelectorAll(".pan-row").forEach((row) => {
+        row.querySelectorAll("[data-pan]").forEach((button) => button.addEventListener("click", () => pan(chartFromRow(row), button.dataset.pan)));
+        row.querySelector("input")?.addEventListener("input", () => {
+          const chart = chartFromRow(row);
+          if (!chart) return;
+          const value = Number(row.querySelector("input").value);
+          state[chart].viewEndMs = value >= 9999 ? null : sliderToEnd(state[chart], value);
+          loadHistory(chart);
+          drawSoon();
+        });
+      });
+      $("close").addEventListener("click", closeModal);
+      $("modal").addEventListener("click", (event) => { if (event.target.id === "modal") closeModal(); });
+      document.querySelectorAll("[data-modal-zoom]").forEach((button) => button.addEventListener("click", () => expanded && zoom(expanded, button.dataset.modalZoom)));
+      window.addEventListener("resize", drawSoon);
+    }
+
+    function wireCanvas(canvas, chartGetter) {
+      canvas.addEventListener("pointermove", (event) => {
+        const chart = chartGetter();
+        if (!chart) return;
+        const rect = canvas.getBoundingClientRect();
+        state[chart].hover = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        drawSoon();
+      });
+      canvas.addEventListener("pointerleave", () => {
+        const chart = chartGetter();
+        if (!chart) return;
+        state[chart].hover = null;
+        drawSoon();
+      });
+      canvas.addEventListener("wheel", (event) => {
+        const chart = chartGetter();
+        if (!chart) return;
+        event.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        state[chart].hover = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        zoom(chart, event.deltaY < 0 ? "in" : "out");
+      }, { passive: false });
+      canvas.addEventListener("click", () => {
+        const chart = chartGetter();
+        if (chart && canvas.id !== "modal-canvas") openModal(chart);
+      });
+    }
+
+    function chartFromRow(row) {
+      return row.dataset.chart === "modal" ? expanded : row.dataset.chart;
+    }
+
+    async function connect() {
+      showError("");
+      if (sse) sse.close();
+      try {
+        const latest = await fetchJson("/api/latest");
+        update(latest);
+        Object.keys(state).forEach(loadHistory);
+        sse = new EventSource(url("/events?symbol=" + encodeURIComponent(symbol)));
+        sse.onmessage = (event) => update(JSON.parse(event.data));
+        sse.onerror = () => {
+          $("status").textContent = "SSE fallback polling";
+          $("dot").classList.remove("ok");
+        };
+        setInterval(async () => {
+          if (!sse || sse.readyState === EventSource.CLOSED) update(await fetchJson("/api/latest"));
+        }, 5000);
+      } catch (error) {
+        showError(`Cloud API connection failed: ${error.message}`);
+        $("status").textContent = "API missing";
+      }
+    }
+
+    async function loadHistory(chart) {
+      if (!apiBase && location.protocol === "file:") return;
+      const s = state[chart];
+      const end = viewEnd(s);
+      const start = Math.max(floorMs, end - s.spanMs);
+      try {
+        const payload = await fetchJson(`/api/history?symbol=${encodeURIComponent(symbol)}&start_ms=${Math.round(start)}&end_ms=${Math.round(end)}&limit=12000`);
+        applyCoverage(payload.coverage);
+        payload.points.forEach(insertPoint);
+        drawSoon();
+      } catch (error) {
+        showError(`History load failed: ${error.message}`);
+      }
+    }
+
+    async function fetchJson(path) {
+      const response = await fetch(url(path), { cache: "no-store" });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const payload = await response.json();
+      if (payload.ok === false) throw new Error(payload.message || payload.detail || "API returned error");
+      return payload;
+    }
+
+    function url(path) {
+      if (path.startsWith("http")) return path;
+      return `${apiBase}${path}`;
+    }
+
+    function update(payload) {
+      const point = payload.point || payload;
+      if (payload.summary) {
+        symbol = payload.config?.symbol || payload.summary.symbol || symbol;
+        applyCoverage(payload.coverage);
+        $("symbol").textContent = symbol;
+        $("rows").textContent = payload.summary.row_count ?? "--";
+        $("underlying").textContent = fmt(payload.summary.underlying_price, 2);
+        $("gamma").textContent = fmt(payload.summary.near_atm_totals.gamma, 5);
+        $("charm").textContent = fmt(payload.summary.near_atm_totals.charm, 5);
+        $("vanna").textContent = fmt(payload.summary.near_atm_totals.vanna, 5);
+        $("gamma").className = cls(payload.summary.near_atm_totals.gamma);
+        $("charm").className = cls(payload.summary.near_atm_totals.charm);
+        $("vanna").className = cls(payload.summary.near_atm_totals.vanna);
+        $("gamma-mode").textContent = payload.summary.gamma_mode;
+        $("charm-mode").textContent = payload.summary.charm_mode;
+        $("vanna-mode").textContent = payload.summary.vanna_mode;
+        $("config-tag").textContent = `${symbol} cloud stream`;
+      }
+      if (point?.timestamp) insertPoint(point);
+      $("status").textContent = "Streaming";
+      $("dot").classList.add("ok");
+      $("last-update").textContent = point?.timestamp ? new Date(point.timestamp).toLocaleString() : new Date().toLocaleString();
+      drawSoon();
+    }
+
+    function insertPoint(point) {
+      const timestampMs = point.timestampMs || new Date(point.timestamp).getTime();
+      if (!Number.isFinite(timestampMs)) return;
+      latestMs = Math.max(latestMs, timestampMs);
+      floorMs = history.length ? Math.min(floorMs, history[0].timestampMs, timestampMs) : timestampMs;
+      const row = { ...point, timestampMs, totals: point.totals || {} };
+      const index = lowerBound(history, timestampMs);
+      if (history[index]?.timestampMs === timestampMs) history[index] = { ...history[index], ...row, totals: { ...history[index].totals, ...row.totals } };
+      else history.splice(index, 0, row);
+    }
+
+    function applyCoverage(coverage) {
+      if (!coverage) return;
+      if (Number.isFinite(coverage.startMs)) floorMs = coverage.startMs;
+      if (Number.isFinite(coverage.endMs)) latestMs = coverage.endMs;
+      const start = coverage.startMs ? dateShort(coverage.startMs) : "--";
+      const end = coverage.endMs ? dateShort(coverage.endMs) : "--";
+      const count = coverage.pointCount ? `${coverage.pointCount.toLocaleString()} pts` : "0 pts";
+      $("history-range").textContent = `${start} -> ${end} | ${count}`;
+    }
+
+    function lowerBound(items, timestampMs) {
+      let low = 0, high = items.length;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (items[mid].timestampMs < timestampMs) low = mid + 1;
+        else high = mid;
+      }
+      return low;
+    }
+
+    function visiblePoints(s) {
+      const end = viewEnd(s);
+      const start = Math.max(floorMs, end - s.spanMs);
+      return history.slice(lowerBound(history, start), lowerBound(history, end + 1));
+    }
+
+    function viewEnd(s) {
+      return s.viewEndMs === null ? latestMs : s.viewEndMs;
+    }
+
+    function minEnd(s) {
+      return Math.min(latestMs, floorMs + s.spanMs);
+    }
+
+    function sliderToEnd(s, value) {
+      return minEnd(s) + (value / 10000) * Math.max(1, latestMs - minEnd(s));
+    }
+
+    function endToSlider(s) {
+      if (s.viewEndMs === null) return 10000;
+      return Math.round(((viewEnd(s) - minEnd(s)) / Math.max(1, latestMs - minEnd(s))) * 10000);
+    }
+
+    function pan(chart, direction) {
+      if (!chart) return;
+      const s = state[chart];
+      if (direction === "live") s.viewEndMs = null;
+      else {
+        const step = s.spanMs * 0.25;
+        s.viewEndMs = Math.max(minEnd(s), Math.min(latestMs, viewEnd(s) + (direction === "older" ? -step : step)));
+        if (latestMs - s.viewEndMs < 1000) s.viewEndMs = null;
+      }
+      loadHistory(chart);
+      drawSoon();
+    }
+
+    function zoom(chart, direction) {
+      const s = state[chart];
+      const maxSpan = s.selectedSeconds * 1000;
+      const minSpan = Math.min(maxSpan, 1000);
+      const oldSpan = s.spanMs;
+      if (direction === "in") s.spanMs = Math.max(minSpan, oldSpan / 1.8);
+      if (direction === "out") s.spanMs = Math.min(maxSpan, oldSpan * 1.8);
+      if (direction === "reset") s.spanMs = maxSpan;
+      const end = viewEnd(s);
+      const start = end - oldSpan;
+      const anchor = s.lastHoverMs || start + oldSpan / 2;
+      const ratio = (anchor - start) / Math.max(1, oldSpan);
+      s.viewEndMs = anchor + (1 - ratio) * s.spanMs;
+      if (latestMs - s.viewEndMs < 1000) s.viewEndMs = null;
+      loadHistory(chart);
+      drawSoon();
+    }
+
+    function openModal(chart) {
+      expanded = chart;
+      $("modal-title").textContent = `${METRICS[chart].title} Expanded`;
+      $("modal-legend").innerHTML = legend(chart);
+      $("modal").classList.add("open");
+      drawSoon();
+    }
+
+    function closeModal() {
+      $("modal").classList.remove("open");
+      expanded = null;
+    }
+
+    function drawSoon() {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        Object.keys(state).forEach((chart) => drawChart($(chart + "-canvas"), chart));
+        if (expanded) {
+          $("modal-pan").value = endToSlider(state[expanded]);
+          $("modal-note").textContent = note(expanded);
+          drawChart($("modal-canvas"), expanded);
+        }
+      });
+    }
+
+    function drawChart(canvas, chart) {
+      const s = state[chart], cfg = METRICS[chart], points = visiblePoints(s);
+      resize(canvas);
+      const ctx = canvas.getContext("2d");
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const pad = { left: 76, right: 52, top: 50, bottom: 58 };
+      ctx.clearRect(0, 0, w, h);
+      const end = viewEnd(s), start = end - s.spanMs;
+      const values = points.flatMap((p) => cfg.metrics.map((m) => Number(p.totals[m] || 0)));
+      let minY = values.length ? Math.min(...values, 0) : -1;
+      let maxY = values.length ? Math.max(...values, 0) : 1;
+      if (minY === maxY) { minY -= 1; maxY += 1; }
+      const yPad = (maxY - minY) * 0.14; minY -= yPad; maxY += yPad;
+      const xAt = (ms) => pad.left + ((ms - start) / Math.max(1, s.spanMs)) * (w - pad.left - pad.right);
+      const yAt = (v) => h - pad.bottom - ((v - minY) / Math.max(1e-9, maxY - minY)) * (h - pad.top - pad.bottom);
+      axes(ctx, w, h, pad, minY, maxY, start, end, xAt, yAt, chart);
+      if (!points.length) {
+        ctx.fillStyle = "#8fa2ad"; ctx.font = "15px Inter, sans-serif";
+        ctx.fillText("Waiting for stored live-stream data in this window...", pad.left, h / 2);
+      } else {
+        cfg.metrics.forEach((m, i) => series(ctx, points, m, cfg.colors[i], xAt, yAt, w, pad));
+      }
+      if (s.hover && points.length) hover(ctx, w, h, pad, s, cfg, points, start, end, xAt, yAt);
+      $(chart + "-pan").value = endToSlider(s);
+      $(chart + "-note").textContent = note(chart);
+    }
+
+    function axes(ctx, w, h, pad, minY, maxY, start, end, xAt, yAt, chart) {
+      ctx.strokeStyle = "#22303d"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, h - pad.bottom); ctx.lineTo(w - pad.right, h - pad.bottom); ctx.stroke();
+      ctx.font = "12px Inter, sans-serif"; ctx.fillStyle = "#8fa2ad";
+      for (let i = 0; i <= 5; i++) {
+        const yVal = minY + ((maxY - minY) * i) / 5, y = yAt(yVal);
+        ctx.strokeStyle = "rgba(255,255,255,.055)"; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+        ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(axisNum(yVal), pad.left - 8, y);
+        const ms = start + ((end - start) * i) / 5, x = xAt(ms);
+        ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
+        ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(tick(ms, state[chart].spanMs), x, h - pad.bottom + 10);
+      }
+      const zeroY = yAt(0); ctx.save(); ctx.strokeStyle = "rgba(143,162,173,.65)"; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke(); ctx.restore();
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.font = "700 15px Inter, sans-serif"; ctx.fillStyle = "#eef5f4";
+      ctx.fillText(`${METRICS[chart].title} | ${win(state[chart].selectedSeconds)} selected | ${win(Math.ceil(state[chart].spanMs / 1000))} visible`, pad.left, 24);
+    }
+
+    function series(ctx, points, metric, color, xAt, yAt, w, pad) {
+      const stride = Math.max(1, Math.floor(points.length / Math.max(1, (w - pad.left - pad.right) * 1.5)));
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < points.length; i += stride) {
+        const x = xAt(points[i].timestampMs), y = yAt(Number(points[i].totals[metric] || 0));
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      const last = points[points.length - 1];
+      if (last) ctx.lineTo(xAt(last.timestampMs), yAt(Number(last.totals[metric] || 0)));
+      ctx.stroke();
+    }
+
+    function hover(ctx, w, h, pad, s, cfg, points, start, end, xAt, yAt) {
+      const x = Math.max(pad.left, Math.min(w - pad.right, s.hover.x));
+      const y = Math.max(pad.top, Math.min(h - pad.bottom, s.hover.y));
+      const target = start + ((x - pad.left) / Math.max(1, w - pad.left - pad.right)) * (end - start);
+      s.lastHoverMs = target;
+      const p = interpolate(points, target, cfg.metrics);
+      ctx.save(); ctx.strokeStyle = "#eef5f4"; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke(); ctx.setLineDash([]);
+      const lines = [`time: ${precise(target)}`, ...cfg.metrics.map((m) => `${m}: ${fmt(p.totals[m], 6)}`)];
+      ctx.font = "12px Inter, sans-serif";
+      const bw = Math.max(...lines.map((line) => ctx.measureText(line).width)) + 18, bh = lines.length * 18 + 12;
+      const bx = x + bw + 14 > w ? x - bw - 12 : x + 12, by = Math.max(pad.top + 6, Math.min(h - pad.bottom - bh - 6, y + 12));
+      ctx.fillStyle = "rgba(8, 11, 16, .94)"; ctx.strokeStyle = "#344759"; ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 7); ctx.fill(); ctx.stroke();
+      lines.forEach((line, i) => { ctx.fillStyle = i === 0 ? "#eef5f4" : cfg.colors[i - 1]; ctx.fillText(line, bx + 9, by + 19 + i * 18); });
+      cfg.metrics.forEach((m, i) => { ctx.fillStyle = cfg.colors[i]; ctx.beginPath(); ctx.arc(x, yAt(p.totals[m]), 4, 0, Math.PI * 2); ctx.fill(); });
+      ctx.restore();
+    }
+
+    function interpolate(points, target, metrics) {
+      let ri = lowerBound(points, target); if (ri >= points.length) ri = points.length - 1;
+      const li = Math.max(0, ri - 1), a = points[li], b = points[ri], span = Math.max(1, b.timestampMs - a.timestampMs);
+      const ratio = a.timestampMs === b.timestampMs ? 0 : Math.max(0, Math.min(1, (target - a.timestampMs) / span));
+      const totals = {}; metrics.forEach((m) => totals[m] = Number(a.totals[m] || 0) + (Number(b.totals[m] || 0) - Number(a.totals[m] || 0)) * ratio);
+      return { totals };
+    }
+
+    function resize(canvas) {
+      const rect = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const width = Math.max(320, Math.floor(rect.width)), height = Math.max(260, Math.floor(rect.height));
+      if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+        canvas.width = Math.floor(width * dpr); canvas.height = Math.floor(height * dpr);
+      }
+      canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function legend(chart) { return METRICS[chart].metrics.map((m, i) => `<span><i class="swatch" style="background:${METRICS[chart].colors[i]}"></i>${m}</span>`).join(""); }
+    function note(chart) { const s = state[chart], pts = visiblePoints(s), mode = s.viewEndMs === null ? "Live tail" : `${duration((latestMs - viewEnd(s)) / 1000)} behind`; return pts.length ? `${mode}: ${dateShort(pts[0].timestampMs)} to ${dateShort(pts[pts.length - 1].timestampMs)} | ${pts.length} pts` : `${mode}: no stored live data in this window yet`; }
+    function cls(v) { return Number(v || 0) >= 0 ? "green" : "red"; }
+    function fmt(v, d = 4) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }); }
+    function axisNum(v) { const a = Math.abs(v); if (a >= 1e6) return (v / 1e6).toFixed(1) + "M"; if (a >= 1e3) return (v / 1e3).toFixed(1) + "K"; if (a >= 1) return v.toFixed(2); return v.toFixed(5); }
+    function tick(ms, span) { const d = new Date(ms); if (span >= 31536000e3) return d.toLocaleDateString([], { month: "short", year: "2-digit" }); if (span >= 604800e3) return d.toLocaleDateString([], { month: "short", day: "numeric" }); return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+    function precise(ms) { const d = new Date(ms); return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}.${String(d.getMilliseconds()).padStart(3, "0")}`; }
+    function dateShort(ms) { return new Date(ms).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+    function duration(s) { if (s >= 31536000) return Math.round(s / 31536000) + "y"; if (s >= 2592000) return Math.round(s / 2592000) + "mo"; if (s >= 604800) return Math.round(s / 604800) + "w"; if (s >= 86400) return Math.round(s / 86400) + "d"; if (s >= 3600) return Math.round(s / 3600) + "h"; if (s >= 60) return Math.round(s / 60) + "m"; return Math.round(s) + "s"; }
+    function win(s) { return WINDOWS.find((w) => w[1] === s)?.[0] || duration(s); }
+    function showError(message) { $("error").style.display = message ? "block" : "none"; $("error").textContent = message; }
+  </script>
+</body>
+</html>

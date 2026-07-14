@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: thetadata-greeks-api
+    runtime: docker
+    rootDir: backend
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: OPTIONS_SYMBOL
+        value: QQQ
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: worker
+    name: thetadata-greeks-ingest
+    runtime: docker
+    rootDir: backend
+    plan: starter
+    dockerCommand: python ingest_worker.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: THETADATA_API_KEY
+        sync: false
+      - key: OPTIONS_SYMBOL
+        value: QQQ
+      - key: OPTIONS_EXPIRATION
+        value: "*"
+      - key: UPDATE_SECONDS
+        value: "5"
+      - key: STRIKE_RANGE
+        value: "12"
+      - key: MAX_DTE
+        value: "3"
+

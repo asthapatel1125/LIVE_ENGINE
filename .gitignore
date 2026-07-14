@@ -1,0 +1,9 @@
+.env
+creds.txt
+__pycache__/
+*.pyc
+.venv/
+venv/
+raw_snapshots/
+.DS_Store
+
