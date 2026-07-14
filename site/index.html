@@ -34,7 +34,7 @@
 
     .app {
       display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
+      grid-template-columns: 220px minmax(0, 1fr);
       min-height: 100vh;
       width: 100%;
     }
@@ -43,7 +43,7 @@
       position: sticky;
       top: 0;
       height: 100vh;
-      padding: 18px;
+      padding: 16px;
       background: rgba(9, 13, 19, 0.92);
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       overflow-y: auto;
@@ -88,6 +88,36 @@
       border-color: rgba(83, 167, 255, 0.38);
       background: rgba(83, 167, 255, 0.13);
       color: #fff;
+    }
+
+    nav button.nav-first {
+      border-color: rgba(255, 132, 186, 0.42);
+      background: #ff84ba;
+      color: #111822;
+    }
+
+    nav button.nav-second {
+      border-color: rgba(255, 223, 130, 0.5);
+      background: #ffdf82;
+      color: #111822;
+    }
+
+    nav button.nav-third {
+      border-color: rgba(153, 194, 255, 0.5);
+      background: #99c2ff;
+      color: #111822;
+    }
+
+    nav button.nav-first:hover,
+    nav button.nav-first.active,
+    nav button.nav-second:hover,
+    nav button.nav-second.active,
+    nav button.nav-third:hover,
+    nav button.nav-third.active {
+      border-color: rgba(255, 255, 255, 0.72);
+      color: #05080c;
+      filter: brightness(1.04);
+      box-shadow: inset 0 0 0 1px rgba(5, 8, 12, 0.2);
     }
 
     .status {
@@ -347,15 +377,15 @@
     }
 
     .title-live.live-on {
-      border-color: rgba(3, 92, 59, 0.38);
-      background: rgba(6, 120, 77, 0.16);
-      color: #064a31;
+      border-color: #06784d;
+      background: #0fc27b;
+      color: #03130d;
     }
 
     .title-live.live-off {
-      border-color: rgba(126, 23, 42, 0.36);
-      background: rgba(126, 23, 42, 0.14);
-      color: #7e172a;
+      border-color: #9e1f36;
+      background: #ff4f6b;
+      color: #1b0509;
     }
 
     .actions {
@@ -650,9 +680,9 @@
       </div>
       <nav>
         <button class="active" data-target="overview">Overview</button>
-        <button data-target="first">1st Order</button>
-        <button data-target="second">2nd Order</button>
-        <button data-target="third">3rd Order</button>
+        <button class="nav-first" data-target="first">1st Order</button>
+        <button class="nav-second" data-target="second">2nd Order</button>
+        <button class="nav-third" data-target="third">3rd Order</button>
       </nav>
       <div class="status">
         <div><span>Status</span><strong id="status">Connecting</strong></div>
