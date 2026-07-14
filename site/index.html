@@ -1123,17 +1123,19 @@
       }
       const zeroY = yAt(0); ctx.save(); ctx.strokeStyle = "rgba(165,181,192,.72)"; ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke(); ctx.restore();
-      drawMetricKey(ctx, pad.left, 24, w - pad.right, METRICS[chart]);
+      drawMetricKey(ctx, pad.left, 24, w - pad.right, chart);
     }
 
-    function drawMetricKey(ctx, x, y, maxX, cfg) {
+    function drawMetricKey(ctx, x, y, maxX, chart) {
+      const cfg = METRICS[chart];
+      const live = latestPoint();
       ctx.save();
       ctx.font = "800 12px Inter, sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       let cx = x, row = 0;
       cfg.metrics.forEach((metric, index) => {
-        const label = metric.toUpperCase();
+        const label = `${metric.toUpperCase()} ${live ? compactValue(live.totals[metric]) : "--"}`;
         const width = Math.ceil(ctx.measureText(label).width) + 22;
         if (cx + width > maxX && cx > x) {
           cx = x;
@@ -1153,6 +1155,10 @@
         cx += width + 8;
       });
       ctx.restore();
+    }
+
+    function latestPoint() {
+      return history.length ? history[history.length - 1] : null;
     }
 
     function series(ctx, points, metric, color, xAt, yAt, w, pad) {
@@ -1228,6 +1234,14 @@
     function note(chart) { const s = state[chart], pts = visiblePoints(s), mode = s.viewEndMs === null ? "Live tail" : `${duration((latestMs - viewEnd(s)) / 1000)} behind`; return pts.length ? `${mode}: ${dateShort(pts[0].timestampMs)} to ${dateShort(pts[pts.length - 1].timestampMs)} | ${pts.length} pts` : `${mode}: no stored live data in this window yet`; }
     function cls(v) { return Number(v || 0) >= 0 ? "green" : "red"; }
     function fmt(v, d = 4) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }); }
+    function compactValue(v) {
+      const n = Number(v || 0), a = Math.abs(n);
+      if (a >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+      if (a >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+      if (a >= 100) return n.toFixed(1);
+      if (a >= 1) return n.toFixed(2);
+      return n.toFixed(4);
+    }
     function axisNum(v) { const a = Math.abs(v); if (a >= 1e6) return (v / 1e6).toFixed(1) + "M"; if (a >= 1e3) return (v / 1e3).toFixed(1) + "K"; if (a >= 1) return v.toFixed(2); return v.toFixed(5); }
     function tick(ms, span) { const d = new Date(ms); if (span >= 86400e3) return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
     function precise(ms) { const d = new Date(ms); return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}.${String(d.getMilliseconds()).padStart(3, "0")}`; }
