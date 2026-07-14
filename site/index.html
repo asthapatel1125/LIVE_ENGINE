@@ -272,21 +272,31 @@
     }
 
     .chart-first {
-      background-color: #0a1728;
+      background-color: #ff84ba;
       background-image: none;
-      border-color: rgba(83, 167, 255, 0.26);
+      border-color: rgba(255, 132, 186, 0.72);
     }
 
     .chart-second {
-      background-color: #082015;
+      background-color: #ffdf82;
       background-image: none;
-      border-color: rgba(49, 211, 152, 0.24);
+      border-color: rgba(255, 223, 130, 0.72);
     }
 
     .chart-third {
-      background-color: #1a1024;
+      background-color: #99c2ff;
       background-image: none;
-      border-color: rgba(192, 132, 252, 0.25);
+      border-color: rgba(153, 194, 255, 0.72);
+    }
+
+    .chart-section .chart-head h3 {
+      color: #09111b;
+      text-shadow: none;
+    }
+
+    .chart-section .window-note {
+      color: #15202b;
+      font-weight: 860;
     }
 
     .chart-head {
@@ -323,6 +333,8 @@
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 0;
+      cursor: pointer;
+      user-select: none;
     }
 
     .title-live::before {
@@ -335,15 +347,15 @@
     }
 
     .title-live.live-on {
-      border-color: rgba(49, 211, 152, 0.48);
-      background: rgba(49, 211, 152, 0.12);
-      color: #5ff0bb;
+      border-color: rgba(3, 92, 59, 0.38);
+      background: rgba(6, 120, 77, 0.16);
+      color: #064a31;
     }
 
     .title-live.live-off {
-      border-color: rgba(255, 95, 122, 0.48);
-      background: rgba(255, 95, 122, 0.11);
-      color: #ff8fa1;
+      border-color: rgba(126, 23, 42, 0.36);
+      background: rgba(126, 23, 42, 0.14);
+      color: #7e172a;
     }
 
     .actions {
@@ -367,7 +379,7 @@
     .icon {
       min-height: 30px;
       border-radius: 6px;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(7, 14, 22, 0.42);
       background: #0b1119;
       color: var(--ink);
       padding: 5px 8px;
@@ -413,19 +425,19 @@
 
     .chart-first canvas,
     canvas.chart-canvas-first {
-      background-color: #07111f;
+      background-color: #130812;
       background-image: none;
     }
 
     .chart-second canvas,
     canvas.chart-canvas-second {
-      background-color: #06170f;
+      background-color: #111008;
       background-image: none;
     }
 
     .chart-third canvas,
     canvas.chart-canvas-third {
-      background-color: #120a1b;
+      background-color: #07101f;
       background-image: none;
     }
 
@@ -449,8 +461,10 @@
       padding: 4px 6px;
       border: 1px solid rgba(255, 255, 255, 0.07);
       border-radius: 7px;
-      background: #080c12;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      background: rgba(7, 10, 15, 0.82);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 6px 18px rgba(0, 0, 0, 0.18);
     }
 
     .scrub-arrow.icon {
@@ -461,7 +475,7 @@
       border: 0;
       border-radius: 5px;
       background: transparent;
-      color: #7f8d98;
+      color: #c7d2dc;
       font-size: 18px;
       line-height: 1;
       box-shadow: none;
@@ -469,7 +483,7 @@
 
     .scrub-arrow.icon:hover {
       background: rgba(83, 167, 255, 0.11);
-      color: #cde9ff;
+      color: #ffffff;
     }
 
     .pan-row input[type="range"],
@@ -542,8 +556,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      text-align: right;
+      text-align: left;
       font-weight: 780;
+      padding-left: 2px;
     }
 
     .legend {
@@ -676,7 +691,10 @@
   <div class="modal" id="modal">
     <div class="modal-panel">
       <div class="chart-head">
-        <h3 id="modal-title">Expanded Chart</h3>
+        <div class="title-wrap">
+          <h3 id="modal-title">Expanded Chart</h3>
+          <span class="title-live live-off" data-live-indicator="modal">Live</span>
+        </div>
         <div class="actions">
           <button class="icon" data-modal-zoom="in">+</button>
           <button class="icon" data-modal-zoom="out">-</button>
@@ -691,10 +709,7 @@
           <input id="modal-pan" class="scrub-range" type="range" min="0" max="10000" value="10000">
           <button class="icon scrub-arrow" data-pan="newer">&gt;</button>
         </div>
-        <div class="stream-row">
-          <button class="icon" data-pan="live">Live</button>
-          <span class="window-note" id="modal-note">Live</span>
-        </div>
+        <span class="window-note" id="modal-note">Live</span>
       </div>
       <div class="legend" id="modal-legend"></div>
     </div>
@@ -759,10 +774,7 @@
               <input id="${key}-pan" class="scrub-range" type="range" min="0" max="10000" value="10000">
               <button class="icon scrub-arrow" data-pan="newer">&gt;</button>
             </div>
-            <div class="stream-row">
-              <button class="icon" data-pan="live">Live</button>
-              <span class="window-note" id="${key}-note">Live</span>
-            </div>
+            <span class="window-note" id="${key}-note">Live</span>
           </div>
         </section>
       `).join("");
@@ -791,6 +803,10 @@
       }));
       document.querySelectorAll("[data-zoom]").forEach((button) => button.addEventListener("click", () => zoom(button.dataset.chart, button.dataset.zoom)));
       document.querySelectorAll("[data-expand]").forEach((button) => button.addEventListener("click", () => openModal(button.dataset.expand)));
+      document.querySelectorAll("[data-live-indicator]").forEach((button) => button.addEventListener("click", () => {
+        const chart = button.dataset.liveIndicator === "modal" ? expanded : button.dataset.liveIndicator;
+        if (chart) pan(chart, "live");
+      }));
       document.querySelectorAll("canvas[data-chart]").forEach((canvas) => wireCanvas(canvas, () => canvas.dataset.chart));
       wireCanvas($("modal-canvas"), () => expanded);
       document.querySelectorAll(".pan-row").forEach((row) => {
@@ -1163,13 +1179,12 @@
       if (row) {
         row.querySelector("input").value = endToSlider(s);
         row.querySelector(".window-note").textContent = note(chart);
-        setLiveButton(row.querySelector('[data-pan="live"]'), live);
       }
       setLiveButton(document.querySelector(`[data-live-indicator="${chart}"]`), live);
       if (expanded === chart) {
         $("modal-pan").value = endToSlider(s);
         $("modal-note").textContent = note(chart);
-        setLiveButton(document.querySelector('.pan-row[data-chart="modal"] [data-pan="live"]'), live);
+        setLiveButton(document.querySelector('[data-live-indicator="modal"]'), live);
       }
     }
 
