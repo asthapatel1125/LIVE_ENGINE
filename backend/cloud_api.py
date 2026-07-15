@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List
 
 from fastapi import FastAPI, Header, HTTPException, Query
@@ -19,6 +19,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
+
+from trade_engine import ENGINE_LOOKBACK_MINUTES, build_trade_signal
 
 
 METRICS = [
@@ -66,6 +68,7 @@ app.add_middleware(
 async def startup() -> None:
     await pool.open()
     await ensure_control_table()
+    await ensure_trade_alert_table()
 
 
 @app.on_event("shutdown")
@@ -130,6 +133,35 @@ async def ensure_control_table() -> None:
             on conflict (control_key) do nothing
             """,
             (CONTROL_KEY,),
+        )
+        await conn.commit()
+
+
+async def ensure_trade_alert_table() -> None:
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            create table if not exists trade_alerts (
+              id bigserial primary key,
+              ts timestamptz not null,
+              symbol text not null,
+              action text not null check (action in ('LONG', 'SHORT')),
+              horizon_minutes integer not null default 20,
+              target_nq_points double precision not null default 50,
+              estimated_nq_points double precision not null default 0,
+              confidence double precision not null default 0,
+              score double precision not null default 0,
+              model text not null default 'greek_confluence_v1',
+              payload jsonb not null,
+              created_at timestamptz not null default now()
+            )
+            """
+        )
+        await conn.execute(
+            """
+            create index if not exists trade_alerts_symbol_ts_desc
+            on trade_alerts (symbol, ts desc)
+            """
         )
         await conn.commit()
 
@@ -272,6 +304,70 @@ async def history_points(symbol: str, start_ms: int, end_ms: int, limit: int) ->
     return [point_from_row(row) for row in rows]
 
 
+async def signal_rows(symbol: str) -> List[Dict[str, Any]]:
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=ENGINE_LOOKBACK_MINUTES)
+    async with pool.connection() as conn:
+        cursor = await conn.execute(
+            """
+            select
+              ts, symbol, underlying, row_count,
+              delta, theta, vega, rho, gamma, vanna, charm, vomma,
+              speed, zomma, color, ultima
+            from option_greek_points
+            where symbol = %s
+              and ts >= %s
+            order by ts asc
+            """,
+            (symbol, cutoff),
+        )
+        rows = await cursor.fetchall()
+    return list(rows)
+
+
+async def latest_trade_signal(symbol: str) -> Dict[str, Any]:
+    return build_trade_signal(await signal_rows(symbol), symbol)
+
+
+def alert_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    ts = row["ts"].astimezone(timezone.utc)
+    payload = row.get("payload") or {}
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            payload = {}
+    return {
+        "id": row["id"],
+        "timestamp": ts.isoformat(),
+        "symbol": row["symbol"],
+        "action": row["action"],
+        "horizonMinutes": int(row["horizon_minutes"]),
+        "targetNqPoints": float(row["target_nq_points"]),
+        "estimatedNqPoints": float(row["estimated_nq_points"]),
+        "confidence": float(row["confidence"]),
+        "score": float(row["score"]),
+        "model": row["model"],
+        "payload": payload,
+    }
+
+
+async def recent_trade_alerts(symbol: str, limit: int) -> List[Dict[str, Any]]:
+    limit = max(1, min(limit, 50))
+    async with pool.connection() as conn:
+        cursor = await conn.execute(
+            """
+            select *
+            from trade_alerts
+            where symbol = %s
+            order by ts desc
+            limit %s
+            """,
+            (symbol, limit),
+        )
+        rows = await cursor.fetchall()
+    return [alert_from_row(row) for row in rows]
+
+
 @app.get("/health")
 async def health() -> Dict[str, Any]:
     return {"ok": True, "timestamp": datetime.now(timezone.utc).isoformat()}
@@ -299,6 +395,7 @@ async def latest(symbol: str = Query(DEFAULT_SYMBOL)) -> Dict[str, Any]:
     if not point:
         raise HTTPException(status_code=404, detail=f"No cloud data found for {symbol}. Start ingest_worker.py first.")
     coverage = await symbol_coverage(symbol)
+    signal = await latest_trade_signal(symbol)
     return {
         "ok": True,
         "timestamp": point["timestamp"],
@@ -310,6 +407,7 @@ async def latest(symbol: str = Query(DEFAULT_SYMBOL)) -> Dict[str, Any]:
         "summary": summary_from_point(point),
         "point": point,
         "coverage": coverage,
+        "signal": signal,
     }
 
 
@@ -334,6 +432,19 @@ async def history(
     }
 
 
+@app.get("/api/trade-signal")
+async def trade_signal(symbol: str = Query(DEFAULT_SYMBOL)) -> Dict[str, Any]:
+    signal = await latest_trade_signal(symbol)
+    alerts = await recent_trade_alerts(symbol, 10)
+    return {"ok": True, "symbol": symbol, "signal": signal, "alerts": alerts}
+
+
+@app.get("/api/trade-alerts")
+async def trade_alerts(symbol: str = Query(DEFAULT_SYMBOL), limit: int = Query(20)) -> Dict[str, Any]:
+    alerts = await recent_trade_alerts(symbol, limit)
+    return {"ok": True, "symbol": symbol, "alerts": alerts}
+
+
 @app.get("/events")
 async def events(symbol: str = Query(DEFAULT_SYMBOL)) -> StreamingResponse:
     async def stream() -> Iterable[str]:
@@ -344,6 +455,7 @@ async def events(symbol: str = Query(DEFAULT_SYMBOL)) -> StreamingResponse:
                 if point and point["timestamp"] != last_timestamp:
                     last_timestamp = point["timestamp"]
                     coverage = await symbol_coverage(symbol)
+                    signal = await latest_trade_signal(symbol)
                     payload = {
                         "ok": True,
                         "timestamp": point["timestamp"],
@@ -355,6 +467,7 @@ async def events(symbol: str = Query(DEFAULT_SYMBOL)) -> StreamingResponse:
                         "summary": summary_from_point(point),
                         "point": point,
                         "coverage": coverage,
+                        "signal": signal,
                     }
                     yield f"data: {json.dumps(payload)}\n\n"
                 else:
