@@ -199,10 +199,10 @@
 
     .api-control {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) auto;
+      grid-template-columns: minmax(240px, 1fr) auto auto;
       gap: 8px;
       align-items: center;
-      width: min(620px, 100%);
+      width: min(740px, 100%);
     }
 
     .api-control input {
@@ -225,6 +225,21 @@
       background: rgba(83, 167, 255, 0.14);
       color: #bfe0ff;
       white-space: nowrap;
+    }
+
+    .stream-toggle {
+      text-align: center;
+      white-space: nowrap;
+      min-width: 82px;
+      border-color: rgba(49, 211, 152, 0.42);
+      background: rgba(49, 211, 152, 0.16);
+      color: #c9ffe9;
+    }
+
+    .stream-toggle.paused {
+      border-color: rgba(255, 95, 122, 0.46);
+      background: rgba(255, 95, 122, 0.18);
+      color: #ffd2da;
     }
 
     .error {
@@ -702,6 +717,7 @@
         <div class="api-control">
           <input id="api-base" placeholder="https://your-backend.example.com">
           <button class="btn" id="save-api">Use API</button>
+          <button class="btn stream-toggle" id="pause-stream" aria-pressed="false">Stop</button>
         </div>
       </div>
 
@@ -768,6 +784,9 @@
     let expanded = null;
     let sse = null;
     let streamActive = false;
+    let collectorEnabled = true;
+    let controlToken = localStorage.getItem("CONTROL_TOKEN") || "";
+    let pollTimer = null;
     let raf = 0;
 
     Object.keys(METRICS).forEach((key) => {
@@ -816,6 +835,7 @@
         localStorage.setItem("TRADING_API_BASE", apiBase);
         connect();
       });
+      $("pause-stream").addEventListener("click", toggleStreamPause);
       document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => {
         document.querySelectorAll("nav button").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
@@ -891,20 +911,32 @@
     async function connect() {
       showError("");
       if (sse) sse.close();
+      if (pollTimer) clearInterval(pollTimer);
       try {
+        await refreshControl();
+        if (!collectorEnabled) {
+          stopClientStream("Collector stopped");
+          return;
+        }
         const latest = await fetchJson("/api/latest");
         update(latest);
         Object.keys(state).forEach(loadHistory);
         sse = new EventSource(url("/events?symbol=" + encodeURIComponent(symbol)));
-        sse.onmessage = (event) => update(JSON.parse(event.data));
+        sse.onmessage = (event) => handleIncoming(JSON.parse(event.data));
         sse.onerror = () => {
-          $("status").textContent = "SSE fallback polling";
+          if (collectorEnabled) $("status").textContent = "SSE fallback polling";
           $("dot").classList.remove("ok");
           streamActive = false;
           drawSoon();
         };
-        setInterval(async () => {
-          if (!sse || sse.readyState === EventSource.CLOSED) update(await fetchJson("/api/latest"));
+        pollTimer = setInterval(async () => {
+          if (!sse || sse.readyState === EventSource.CLOSED) {
+            try {
+              handleIncoming(await fetchJson("/api/latest"));
+            } catch (error) {
+              if (collectorEnabled) showError(`Cloud API polling failed: ${error.message}`);
+            }
+          }
         }, 5000);
       } catch (error) {
         showError(`Cloud API connection failed: ${error.message}`);
@@ -933,9 +965,18 @@
       }
     }
 
-    async function fetchJson(path) {
-      const response = await fetch(url(path), { cache: "no-store" });
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    async function fetchJson(path, options = {}) {
+      const response = await fetch(url(path), { cache: "no-store", ...options, headers: { ...(options.headers || {}) } });
+      if (!response.ok) {
+        let detail = `${response.status} ${response.statusText}`;
+        try {
+          const payload = await response.json();
+          detail = payload.detail || payload.message || detail;
+        } catch (_) {}
+        const error = new Error(detail);
+        error.status = response.status;
+        throw error;
+      }
       const payload = await response.json();
       if (payload.ok === false) throw new Error(payload.message || payload.detail || "API returned error");
       return payload;
@@ -944,6 +985,82 @@
     function url(path) {
       if (path.startsWith("http")) return path;
       return `${apiBase}${path}`;
+    }
+
+    function handleIncoming(payload) {
+      if (!collectorEnabled) return;
+      update(payload);
+    }
+
+    async function toggleStreamPause() {
+      const desired = !collectorEnabled;
+      $("pause-stream").disabled = true;
+      try {
+        const payload = await setCollectorState(desired);
+        applyControlState(payload.collector);
+        if (collectorEnabled) await connect();
+        else stopClientStream("Collector stopped");
+      } catch (error) {
+        showError(`Collector toggle failed: ${error.message}`);
+      } finally {
+        $("pause-stream").disabled = false;
+      }
+    }
+
+    async function refreshControl() {
+      const payload = await fetchJson("/api/control");
+      applyControlState(payload.collector);
+      return payload.collector;
+    }
+
+    async function setCollectorState(enabled) {
+      try {
+        return await controlFetch(enabled);
+      } catch (error) {
+        if (error.status !== 401 && error.status !== 403) throw error;
+        const token = window.prompt("Enter collector control token");
+        if (!token) throw error;
+        controlToken = token.trim();
+        localStorage.setItem("CONTROL_TOKEN", controlToken);
+        return await controlFetch(enabled);
+      }
+    }
+
+    async function controlFetch(enabled) {
+      const headers = { "Content-Type": "application/json" };
+      if (controlToken) headers["X-Control-Token"] = controlToken;
+      return fetchJson("/api/control", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ enabled }),
+      });
+    }
+
+    function applyControlState(control) {
+      collectorEnabled = Boolean(control?.enabled);
+      syncCollectorButton();
+    }
+
+    function syncCollectorButton() {
+      const button = $("pause-stream");
+      button.textContent = collectorEnabled ? "Stop" : "Start";
+      button.classList.toggle("paused", !collectorEnabled);
+      button.setAttribute("aria-pressed", String(!collectorEnabled));
+    }
+
+    function stopClientStream(statusText) {
+      if (sse) {
+        sse.close();
+        sse = null;
+      }
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      streamActive = false;
+      $("status").textContent = statusText;
+      $("dot").classList.remove("ok");
+      drawSoon();
     }
 
     function update(payload) {
@@ -1210,7 +1327,7 @@
 
     function syncPanControls(chart) {
       const s = state[chart];
-      const live = s.viewEndMs === null && streamActive;
+      const live = s.viewEndMs === null && streamActive && collectorEnabled;
       const row = document.querySelector(`.pan-row[data-chart="${chart}"]`);
       if (row) {
         row.querySelector("input").value = endToSlider(s);

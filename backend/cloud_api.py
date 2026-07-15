@@ -13,9 +13,10 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
@@ -37,6 +38,8 @@ METRICS = [
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 DEFAULT_SYMBOL = os.getenv("OPTIONS_SYMBOL", "QQQ")
+CONTROL_KEY = os.getenv("CONTROL_KEY", "thetadata_ingest")
+CONTROL_TOKEN = os.getenv("CONTROL_TOKEN", "")
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ORIGINS", "*").split(",")
@@ -54,7 +57,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -62,6 +65,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup() -> None:
     await pool.open()
+    await ensure_control_table()
 
 
 @app.on_event("shutdown")
@@ -101,6 +105,82 @@ def summary_from_point(point: Dict[str, Any]) -> Dict[str, Any]:
         "charm_mode": "positive charm / upward delta drift" if totals["charm"] > 0 else "negative charm / downward delta drift",
         "vanna_mode": "positive vanna / vol-crush bullish pressure" if totals["vanna"] > 0 else "negative vanna / vol-crush bearish pressure",
         "speed_mode": "gamma sensitivity rising with price" if totals["speed"] > 0 else "gamma sensitivity falling with price",
+    }
+
+
+class ControlUpdate(BaseModel):
+    enabled: bool
+
+
+async def ensure_control_table() -> None:
+    async with pool.connection() as conn:
+        await conn.execute(
+            """
+            create table if not exists stream_control (
+              control_key text primary key,
+              enabled boolean not null default true,
+              updated_at timestamptz not null default now()
+            )
+            """
+        )
+        await conn.execute(
+            """
+            insert into stream_control (control_key, enabled)
+            values (%s, true)
+            on conflict (control_key) do nothing
+            """,
+            (CONTROL_KEY,),
+        )
+        await conn.commit()
+
+
+def require_control_token(x_control_token: str) -> None:
+    if CONTROL_TOKEN and x_control_token != CONTROL_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid or missing collector control token.")
+
+
+async def control_state() -> Dict[str, Any]:
+    async with pool.connection() as conn:
+        cursor = await conn.execute(
+            """
+            select control_key, enabled, updated_at
+            from stream_control
+            where control_key = %s
+            """,
+            (CONTROL_KEY,),
+        )
+        row = await cursor.fetchone()
+    if not row:
+        await ensure_control_table()
+        return await control_state()
+    updated_at = row["updated_at"].astimezone(timezone.utc)
+    return {
+        "controlKey": row["control_key"],
+        "enabled": bool(row["enabled"]),
+        "updatedAt": updated_at.isoformat(),
+    }
+
+
+async def set_control_state(enabled: bool) -> Dict[str, Any]:
+    async with pool.connection() as conn:
+        cursor = await conn.execute(
+            """
+            insert into stream_control (control_key, enabled, updated_at)
+            values (%s, %s, now())
+            on conflict (control_key) do update set
+              enabled = excluded.enabled,
+              updated_at = now()
+            returning control_key, enabled, updated_at
+            """,
+            (CONTROL_KEY, enabled),
+        )
+        row = await cursor.fetchone()
+        await conn.commit()
+    updated_at = row["updated_at"].astimezone(timezone.utc)
+    return {
+        "controlKey": row["control_key"],
+        "enabled": bool(row["enabled"]),
+        "updatedAt": updated_at.isoformat(),
     }
 
 
@@ -195,6 +275,22 @@ async def history_points(symbol: str, start_ms: int, end_ms: int, limit: int) ->
 @app.get("/health")
 async def health() -> Dict[str, Any]:
     return {"ok": True, "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@app.get("/api/control")
+async def get_control() -> Dict[str, Any]:
+    state = await control_state()
+    return {"ok": True, "collector": state}
+
+
+@app.post("/api/control")
+async def update_control(
+    update: ControlUpdate,
+    x_control_token: str = Header(default="", alias="X-Control-Token"),
+) -> Dict[str, Any]:
+    require_control_token(x_control_token)
+    state = await set_control_state(update.enabled)
+    return {"ok": True, "collector": state}
 
 
 @app.get("/api/latest")

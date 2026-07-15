@@ -23,10 +23,12 @@ METRICS = FIRST_ORDER + SECOND_ORDER + THIRD_ORDER
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 SYMBOL = os.getenv("OPTIONS_SYMBOL", "QQQ")
+CONTROL_KEY = os.getenv("CONTROL_KEY", "thetadata_ingest")
 EXPIRATION = os.getenv("OPTIONS_EXPIRATION", "*")
 STRIKE_RANGE = int(os.getenv("STRIKE_RANGE", "12"))
 MAX_DTE = int(os.getenv("MAX_DTE", "3"))
 UPDATE_SECONDS = float(os.getenv("UPDATE_SECONDS", "5"))
+PAUSE_SLEEP_SECONDS = float(os.getenv("PAUSE_SLEEP_SECONDS", str(max(5.0, UPDATE_SECONDS))))
 DATAFRAME_TYPE = os.getenv("DATAFRAME_TYPE", "polars")
 LOCAL_CSV_ARCHIVE = os.getenv("LOCAL_CSV_ARCHIVE", "false").lower() == "true"
 ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", "raw_snapshots"))
@@ -176,13 +178,54 @@ def write_point(conn: psycopg.Connection, summary: Dict[str, Any]) -> None:
     )
 
 
+def ensure_control_table(conn: psycopg.Connection) -> None:
+    conn.execute(
+        """
+        create table if not exists stream_control (
+          control_key text primary key,
+          enabled boolean not null default true,
+          updated_at timestamptz not null default now()
+        )
+        """
+    )
+    conn.execute(
+        """
+        insert into stream_control (control_key, enabled)
+        values (%s, true)
+        on conflict (control_key) do nothing
+        """,
+        (CONTROL_KEY,),
+    )
+    conn.commit()
+
+
+def collector_enabled(conn: psycopg.Connection) -> bool:
+    cursor = conn.execute(
+        "select enabled from stream_control where control_key = %s",
+        (CONTROL_KEY,),
+    )
+    row = cursor.fetchone()
+    conn.commit()
+    if row is None:
+        ensure_control_table(conn)
+        return True
+    return bool(row[0])
+
+
 def main() -> None:
     load_dotenv()
-    client = theta_client()
+    client = None
     with psycopg.connect(DATABASE_URL) as conn:
+        ensure_control_table(conn)
         while True:
             start = time.time()
             try:
+                if not collector_enabled(conn):
+                    print(f"{datetime.now(timezone.utc).isoformat()} collector paused; skipping ThetaData request")
+                    time.sleep(PAUSE_SLEEP_SECONDS)
+                    continue
+                if client is None:
+                    client = theta_client()
                 records = fetch_snapshot(client)
                 summary = summarize(records)
                 write_point(conn, summary)
@@ -210,4 +253,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
