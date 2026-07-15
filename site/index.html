@@ -1108,6 +1108,9 @@
         update(latest);
         Object.keys(state).forEach(loadHistory);
         sse = new EventSource(url("/events?symbol=" + encodeURIComponent(symbol)));
+        sse.onopen = () => {
+          if (collectorEnabled) $("status").textContent = "Streaming";
+        };
         sse.onmessage = (event) => handleIncoming(JSON.parse(event.data));
         sse.onerror = () => {
           if (collectorEnabled) $("status").textContent = "SSE fallback polling";
@@ -1116,12 +1119,10 @@
           drawSoon();
         };
         pollTimer = setInterval(async () => {
-          if (!sse || sse.readyState === EventSource.CLOSED) {
-            try {
-              handleIncoming(await fetchJson("/api/latest"));
-            } catch (error) {
-              if (collectorEnabled) showError(`Cloud API polling failed: ${error.message}`);
-            }
+          try {
+            handleIncoming(await fetchJson("/api/latest"));
+          } catch (error) {
+            if (collectorEnabled) showError(`Cloud API polling failed: ${error.message}`);
           }
         }, 5000);
       } catch (error) {
