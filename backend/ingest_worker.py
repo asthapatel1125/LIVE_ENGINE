@@ -7,23 +7,13 @@ ThetaData credentials private and writes compact aggregate points to Postgres.
 from __future__ import annotations
 
 import csv
-import json
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
 import psycopg
-from psycopg.rows import dict_row
-
-from trade_engine import (
-    ALERT_MODEL_VERSION,
-    ENGINE_HORIZON_MINUTES,
-    ENGINE_LOOKBACK_MINUTES,
-    TARGET_NQ_POINTS,
-    build_trade_signal,
-)
 
 
 FIRST_ORDER = ["delta", "theta", "vega", "rho"]
@@ -42,7 +32,6 @@ PAUSE_SLEEP_SECONDS = float(os.getenv("PAUSE_SLEEP_SECONDS", str(max(5.0, UPDATE
 DATAFRAME_TYPE = os.getenv("DATAFRAME_TYPE", "polars")
 LOCAL_CSV_ARCHIVE = os.getenv("LOCAL_CSV_ARCHIVE", "false").lower() == "true"
 ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", "raw_snapshots"))
-ALERT_COOLDOWN_SECONDS = int(os.getenv("ALERT_COOLDOWN_SECONDS", "300"))
 
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is required.")
@@ -210,34 +199,6 @@ def ensure_control_table(conn: psycopg.Connection) -> None:
     conn.commit()
 
 
-def ensure_trade_alert_table(conn: psycopg.Connection) -> None:
-    conn.execute(
-        """
-        create table if not exists trade_alerts (
-          id bigserial primary key,
-          ts timestamptz not null,
-          symbol text not null,
-          action text not null check (action in ('LONG', 'SHORT')),
-          horizon_minutes integer not null default 20,
-          target_nq_points double precision not null default 50,
-          estimated_nq_points double precision not null default 0,
-          confidence double precision not null default 0,
-          score double precision not null default 0,
-          model text not null default 'greek_confluence_v1',
-          payload jsonb not null,
-          created_at timestamptz not null default now()
-        )
-        """
-    )
-    conn.execute(
-        """
-        create index if not exists trade_alerts_symbol_ts_desc
-        on trade_alerts (symbol, ts desc)
-        """
-    )
-    conn.commit()
-
-
 def collector_enabled(conn: psycopg.Connection) -> bool:
     cursor = conn.execute(
         "select enabled from stream_control where control_key = %s",
@@ -251,75 +212,11 @@ def collector_enabled(conn: psycopg.Connection) -> bool:
     return bool(row[0])
 
 
-def recent_signal_points(conn: psycopg.Connection) -> List[Dict[str, Any]]:
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=ENGINE_LOOKBACK_MINUTES)
-    cursor = conn.execute(
-        """
-        select
-          ts, symbol, underlying, row_count,
-          delta, theta, vega, rho, gamma, vanna, charm, vomma,
-          speed, zomma, color, ultima
-        from option_greek_points
-        where symbol = %s
-          and ts >= %s
-        order by ts asc
-        """,
-        (SYMBOL, cutoff),
-    )
-    return list(cursor.fetchall())
-
-
-def recent_alert_exists(conn: psycopg.Connection, action: str) -> bool:
-    cutoff = datetime.now(timezone.utc) - timedelta(seconds=ALERT_COOLDOWN_SECONDS)
-    cursor = conn.execute(
-        """
-        select 1
-        from trade_alerts
-        where symbol = %s
-          and action = %s
-          and ts >= %s
-        limit 1
-        """,
-        (SYMBOL, action, cutoff),
-    )
-    return cursor.fetchone() is not None
-
-
-def write_trade_alert(conn: psycopg.Connection, signal: Dict[str, Any]) -> None:
-    if not signal.get("alert") or signal.get("action") not in {"LONG", "SHORT"}:
-        return
-    if recent_alert_exists(conn, signal["action"]):
-        return
-    ts = datetime.fromisoformat(signal["asOf"].replace("Z", "+00:00"))
-    conn.execute(
-        """
-        insert into trade_alerts (
-          ts, symbol, action, horizon_minutes, target_nq_points,
-          estimated_nq_points, confidence, score, model, payload
-        )
-        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-        """,
-        (
-            ts,
-            signal["symbol"],
-            signal["action"],
-            ENGINE_HORIZON_MINUTES,
-            TARGET_NQ_POINTS,
-            signal["estimatedNqPoints"],
-            signal["confidence"],
-            signal["score"],
-            ALERT_MODEL_VERSION,
-            json.dumps(signal),
-        ),
-    )
-
-
 def main() -> None:
     load_dotenv()
     client = None
-    with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+    with psycopg.connect(DATABASE_URL) as conn:
         ensure_control_table(conn)
-        ensure_trade_alert_table(conn)
         while True:
             start = time.time()
             try:
@@ -332,8 +229,6 @@ def main() -> None:
                 records = fetch_snapshot(client)
                 summary = summarize(records)
                 write_point(conn, summary)
-                signal = build_trade_signal(recent_signal_points(conn), SYMBOL)
-                write_trade_alert(conn, signal)
                 if LOCAL_CSV_ARCHIVE:
                     csv_path = save_local_csv(records, summary["timestamp"])
                     conn.execute(
@@ -347,8 +242,7 @@ def main() -> None:
                 conn.commit()
                 print(
                     f"{summary['timestamp'].isoformat()} wrote {SYMBOL} "
-                    f"{summary['row_count']} rows gamma={summary['totals']['gamma']:.6f} "
-                    f"signal={signal.get('action')} confidence={signal.get('confidence', 0)}"
+                    f"{summary['row_count']} rows gamma={summary['totals']['gamma']:.6f}"
                 )
             except Exception as exc:
                 conn.rollback()

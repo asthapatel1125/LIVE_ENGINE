@@ -108,32 +108,16 @@
       color: #111822;
     }
 
-    nav button.nav-engine {
-      border-color: rgba(49, 211, 152, 0.42);
-      background: #153427;
-      color: #d7ffef;
-    }
-
-    nav button.nav-first:hover,
-    nav button.nav-first.active,
-    nav button.nav-second:hover,
-    nav button.nav-second.active,
-    nav button.nav-third:hover,
-    nav button.nav-third.active,
-    nav button.nav-engine:hover,
-    nav button.nav-engine.active {
-      border-color: rgba(255, 255, 255, 0.72);
-      filter: brightness(1.04);
-      box-shadow: inset 0 0 0 1px rgba(5, 8, 12, 0.2);
-    }
-
     nav button.nav-first:hover,
     nav button.nav-first.active,
     nav button.nav-second:hover,
     nav button.nav-second.active,
     nav button.nav-third:hover,
     nav button.nav-third.active {
+      border-color: rgba(255, 255, 255, 0.72);
       color: #05080c;
+      filter: brightness(1.04);
+      box-shadow: inset 0 0 0 1px rgba(5, 8, 12, 0.2);
     }
 
     .status {
@@ -305,131 +289,6 @@
 
     .green { color: var(--green); }
     .red { color: var(--red); }
-
-    .engine-card {
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-      background: #0d151c;
-      border-color: rgba(83, 167, 255, 0.18);
-    }
-
-    .engine-card.long {
-      border-color: rgba(49, 211, 152, 0.58);
-      box-shadow: 0 18px 60px rgba(49, 211, 152, 0.11);
-    }
-
-    .engine-card.short {
-      border-color: rgba(255, 95, 122, 0.62);
-      box-shadow: 0 18px 60px rgba(255, 95, 122, 0.12);
-    }
-
-    .engine-top {
-      display: grid;
-      grid-template-columns: minmax(220px, 1.1fr) repeat(4, minmax(120px, 0.55fr));
-      gap: 10px;
-      align-items: stretch;
-    }
-
-    .engine-hero,
-    .engine-stat,
-    .engine-score,
-    .engine-reasons {
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 7px;
-      background: #081019;
-      padding: 11px;
-      min-width: 0;
-    }
-
-    .engine-label {
-      display: block;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .engine-action {
-      display: inline-flex;
-      align-items: center;
-      margin-top: 8px;
-      min-height: 36px;
-      border-radius: 7px;
-      padding: 6px 12px;
-      background: #f2b84b;
-      color: #130d02;
-      font-size: 22px;
-      line-height: 1;
-      font-weight: 950;
-    }
-
-    .engine-card.long .engine-action {
-      background: var(--green);
-      color: #02130c;
-    }
-
-    .engine-card.short .engine-action {
-      background: var(--red);
-      color: #1b0509;
-    }
-
-    .engine-note {
-      display: block;
-      margin-top: 8px;
-      color: #a9bac3;
-      font-size: 12px;
-      line-height: 1.35;
-      font-weight: 760;
-    }
-
-    .engine-stat strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 19px;
-      line-height: 1.1;
-    }
-
-    .engine-scores {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .engine-score {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      color: #b9c8cf;
-      font-size: 12px;
-      font-weight: 880;
-    }
-
-    .engine-score strong {
-      color: #eef5f4;
-      font-size: 14px;
-    }
-
-    .engine-reasons {
-      display: grid;
-      gap: 6px;
-      color: #c7d4da;
-      font-size: 12px;
-      line-height: 1.35;
-      font-weight: 750;
-    }
-
-    .engine-reasons div::before {
-      content: "";
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      margin-right: 7px;
-      border-radius: 50%;
-      background: var(--blue);
-      vertical-align: 1px;
-    }
 
     section {
       padding: 14px;
@@ -802,14 +661,12 @@
     @media (max-width: 1180px) {
       .app { grid-template-columns: 1fr; }
       aside { position: relative; height: auto; }
-      nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .engine-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 760px) {
       main { padding: 10px; }
-      nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .topbar,
       .chart-head {
         align-items: flex-start;
@@ -819,8 +676,6 @@
       .api-control { width: 100%; }
       .api-control { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: 1fr; }
-      .engine-top,
-      .engine-scores { grid-template-columns: 1fr; }
       .scrub-shell { grid-template-columns: 20px minmax(120px, 1fr) 20px; }
       .stream-row { grid-template-columns: 1fr; }
       .window-note {
@@ -840,7 +695,6 @@
       </div>
       <nav>
         <button class="active" data-target="overview">Overview</button>
-        <button class="nav-engine" data-target="engine">Trade Engine</button>
         <button class="nav-first" data-target="first">1st Order</button>
         <button class="nav-second" data-target="second">2nd Order</button>
         <button class="nav-third" data-target="third">3rd Order</button>
@@ -875,45 +729,6 @@
         <div class="card"><span>Charm</span><strong id="charm" class="green">--</strong><small id="charm-mode">--</small></div>
         <div class="card"><span>Vanna</span><strong id="vanna" class="green">--</strong><small id="vanna-mode">--</small></div>
       </div>
-
-      <section class="engine-card wait" id="engine">
-        <div class="engine-top">
-          <div class="engine-hero">
-            <span class="engine-label">20-Minute Trade Alert</span>
-            <strong class="engine-action" id="engine-action">WAIT</strong>
-            <small class="engine-note" id="engine-note">Waiting for live Greek confluence.</small>
-          </div>
-          <div class="engine-stat">
-            <span class="engine-label">NQ Estimate</span>
-            <strong id="engine-estimate">--</strong>
-            <small class="engine-note" id="engine-target">QQQ proxy -> 50 pt trigger</small>
-          </div>
-          <div class="engine-stat">
-            <span class="engine-label">Confidence</span>
-            <strong id="engine-confidence">--</strong>
-            <small class="engine-note" id="engine-readiness">--</small>
-          </div>
-          <div class="engine-stat">
-            <span class="engine-label">Score</span>
-            <strong id="engine-score">--</strong>
-            <small class="engine-note">Greek pressure</small>
-          </div>
-          <div class="engine-stat">
-            <span class="engine-label">Regime</span>
-            <strong id="engine-regime">--</strong>
-            <small class="engine-note" id="engine-model">--</small>
-          </div>
-        </div>
-        <div class="engine-scores">
-          <div class="engine-score"><span>1st order</span><strong id="score-first">--</strong></div>
-          <div class="engine-score"><span>2nd order</span><strong id="score-second">--</strong></div>
-          <div class="engine-score"><span>3rd order</span><strong id="score-third">--</strong></div>
-          <div class="engine-score"><span>Momentum</span><strong id="score-momentum">--</strong></div>
-        </div>
-        <div class="engine-reasons" id="engine-reasons">
-          <div>No alert until the live stream has enough points and the 20-minute estimate clears the threshold.</div>
-        </div>
-      </section>
 
       <div id="charts"></div>
     </main>
@@ -971,7 +786,6 @@
     let streamActive = false;
     let collectorEnabled = true;
     let controlToken = localStorage.getItem("CONTROL_TOKEN") || "";
-    let latestSignal = null;
     let pollTimer = null;
     let raf = 0;
 
@@ -1108,9 +922,6 @@
         update(latest);
         Object.keys(state).forEach(loadHistory);
         sse = new EventSource(url("/events?symbol=" + encodeURIComponent(symbol)));
-        sse.onopen = () => {
-          if (collectorEnabled) $("status").textContent = "Streaming";
-        };
         sse.onmessage = (event) => handleIncoming(JSON.parse(event.data));
         sse.onerror = () => {
           if (collectorEnabled) $("status").textContent = "SSE fallback polling";
@@ -1119,10 +930,12 @@
           drawSoon();
         };
         pollTimer = setInterval(async () => {
-          try {
-            handleIncoming(await fetchJson("/api/latest"));
-          } catch (error) {
-            if (collectorEnabled) showError(`Cloud API polling failed: ${error.message}`);
+          if (!sse || sse.readyState === EventSource.CLOSED) {
+            try {
+              handleIncoming(await fetchJson("/api/latest"));
+            } catch (error) {
+              if (collectorEnabled) showError(`Cloud API polling failed: ${error.message}`);
+            }
           }
         }, 5000);
       } catch (error) {
@@ -1252,7 +1065,6 @@
 
     function update(payload) {
       const point = payload.point || payload;
-      if (payload.signal) renderSignal(payload.signal);
       if (payload.summary) {
         symbol = payload.config?.symbol || payload.summary.symbol || symbol;
         applyCoverage(payload.coverage);
@@ -1276,45 +1088,6 @@
       streamActive = true;
       $("last-update").textContent = point?.timestamp ? new Date(point.timestamp).toLocaleString() : new Date().toLocaleString();
       drawSoon();
-    }
-
-    function renderSignal(signal) {
-      latestSignal = signal;
-      const action = signal.action || "WAIT";
-      const card = $("engine");
-      card.className = `engine-card ${action.toLowerCase()}`;
-      $("engine-action").textContent = action;
-      $("engine-estimate").textContent = Number.isFinite(signal.estimatedNqPoints)
-        ? `${signed(signal.estimatedNqPoints, 1)} pts`
-        : "--";
-      $("engine-confidence").textContent = Number.isFinite(signal.confidence)
-        ? `${signal.confidence.toFixed(1)}%`
-        : "--";
-      $("engine-score").textContent = Number.isFinite(signal.score)
-        ? signed(signal.score, 3)
-        : "--";
-      $("engine-regime").textContent = signal.regime || "--";
-      $("engine-model").textContent = signal.model || "--";
-      $("engine-target").textContent = `${signal.symbol || symbol} proxy x${fmt(signal.sourceToNqMultiplier || 1, 0)} -> ${fmt(signal.targetNqPoints || 50, 0)} pt trigger`;
-      $("engine-readiness").textContent = Number.isFinite(signal.spanMinutes)
-        ? `${signal.pointsUsed || 0} pts | ${signal.spanMinutes.toFixed(1)}m`
-        : signal.status || "--";
-
-      const note = signal.alert
-        ? `${action} alert active: 20m estimate cleared ${fmt(signal.targetNqPoints, 0)} NQ pts.`
-        : action === "WAIT"
-          ? "No trade alert: confluence or projected NQ move is below threshold."
-          : `${action} bias, but alert threshold is not fully confirmed.`;
-      $("engine-note").textContent = note;
-
-      const scores = signal.orderScores || {};
-      $("score-first").textContent = signed(scores.first, 2);
-      $("score-second").textContent = signed(scores.second, 2);
-      $("score-third").textContent = signed(scores.third, 2);
-      $("score-momentum").textContent = signed(scores.momentum, 2);
-
-      const reasons = Array.isArray(signal.reasons) ? signal.reasons.slice(0, 6) : [signal.reason || "Waiting for signal."];
-      $("engine-reasons").innerHTML = reasons.map((reason) => `<div>${escapeHtml(reason)}</div>`).join("");
     }
 
     function insertPoint(point) {
@@ -1578,19 +1351,6 @@
     function note(chart) { const s = state[chart], pts = visiblePoints(s), mode = s.viewEndMs === null ? "Live tail" : `${duration((latestMs - viewEnd(s)) / 1000)} behind`; return pts.length ? `${mode}: ${dateShort(pts[0].timestampMs)} to ${dateShort(pts[pts.length - 1].timestampMs)} | ${pts.length} pts` : `${mode}: no stored live data in this window yet`; }
     function cls(v) { return Number(v || 0) >= 0 ? "green" : "red"; }
     function fmt(v, d = 4) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }); }
-    function signed(v, d = 2) {
-      const n = Number(v);
-      if (!Number.isFinite(n)) return "--";
-      return `${n >= 0 ? "+" : ""}${n.toFixed(d)}`;
-    }
-    function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
     function compactValue(v) {
       const n = Number(v || 0), a = Math.abs(n);
       if (a >= 1e6) return `${(n / 1e6).toFixed(2)}M`;

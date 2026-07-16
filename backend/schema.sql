@@ -1,3 +1,7 @@
+-- Cloud storage schema for the hosted ThetaData dashboard.
+-- Recommended database: Supabase Postgres, Neon Postgres, or Timescale/Tiger Cloud.
+-- If TimescaleDB is available, the hypertable section below makes history queries faster.
+
 create table if not exists option_greek_points (
   ts timestamptz not null,
   symbol text not null,
@@ -24,38 +28,8 @@ create table if not exists option_greek_points (
 create index if not exists option_greek_points_symbol_ts_desc
   on option_greek_points (symbol, ts desc);
 
-create table if not exists stream_control (
-  control_key text primary key,
-  enabled boolean not null default true,
-  updated_at timestamptz not null default now()
-);
-
-insert into stream_control (control_key, enabled)
-select 'thetadata_ingest', true
-where not exists (
-  select 1
-  from stream_control
-  where control_key = 'thetadata_ingest'
-);
-
-create table if not exists trade_alerts (
-  id bigserial primary key,
-  ts timestamptz not null,
-  symbol text not null,
-  action text not null check (action in ('LONG', 'SHORT')),
-  horizon_minutes integer not null default 20,
-  target_nq_points double precision not null default 50,
-  estimated_nq_points double precision not null default 0,
-  confidence double precision not null default 0,
-  score double precision not null default 0,
-  model text not null default 'greek_confluence_v1',
-  payload jsonb not null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists trade_alerts_symbol_ts_desc
-  on trade_alerts (symbol, ts desc);
-
+-- Optional raw snapshot archive registry.
+-- Store the actual raw CSV in S3/R2/Supabase Storage, not in this table.
 create table if not exists raw_snapshot_archives (
   ts timestamptz not null,
   symbol text not null,
@@ -64,3 +38,12 @@ create table if not exists raw_snapshot_archives (
   created_at timestamptz not null default now(),
   primary key (symbol, ts)
 );
+
+-- Timescale/Tiger Cloud optimization. Run only when the extension is available.
+-- create extension if not exists timescaledb;
+-- select create_hypertable('option_greek_points', by_range('ts'), if_not_exists => true);
+-- alter table option_greek_points set (
+--   timescaledb.compress,
+--   timescaledb.compress_segmentby = 'symbol, expiration_mode'
+-- );
+-- select add_compression_policy('option_greek_points', interval '7 days', if_not_exists => true);
